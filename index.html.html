@@ -1,0 +1,1617 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Q-ACID 303 — Quantum Acid Machine</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700;800&family=Bebas+Neue&family=IBM+Plex+Mono:wght@400;600&family=Oswald:wght@400;500;700&display=swap');
+
+:root {
+  --bg:#0a0a0e;--chassis:#161620;--chassis2:#1c1c2a;--chassis3:#222235;
+  --silver:#c0c0cc;--silver-dim:#8888a0;--silver-dark:#555568;
+  --border:#2a2a40;--border-hi:#3a3a55;--border-lo:#1a1a30;
+  --acid:#39ff14;--acid-dim:#1a7a0a;--acid-glow:rgba(57,255,20,0.12);--acid-mid:#2acc10;
+  --kick:#ff3c00;--snare:#ffd500;--hat:#00d4ff;--bass:#39ff14;
+  --quantum:#bf00ff;--qglow:rgba(191,0,255,0.15);--qmid:#9500cc;
+  --fx:#ff6b2b;--fx-dim:#994020;
+  --decohere:#ff2d95;--decohere-glow:rgba(255,45,149,0.12);
+  --text:#c8c8d8;--dim:#5a5a72;--dim2:#44445a;
+  --led-red:#ff2200;--led-green:#39ff14;--led-blue:#00aaff;
+}
+
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:'JetBrains Mono',monospace;overflow-x:hidden;min-height:100vh}
+
+/* Scanlines */
+body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.04) 2px,rgba(0,0,0,0.04) 4px);pointer-events:none;z-index:9999}
+
+.app{position:relative;z-index:1;max-width:980px;margin:0 auto;padding:0.75rem 1rem 3rem}
+
+/* ===== TAB SYSTEM ===== */
+.tab-bar{display:flex;gap:0;margin-bottom:0;border-bottom:2px solid var(--acid);position:sticky;top:0;z-index:100;background:var(--bg)}
+.tab-btn{font-family:'Oswald',sans-serif;font-size:0.85rem;font-weight:500;letter-spacing:0.15em;text-transform:uppercase;padding:0.6rem 1.5rem;border:none;background:var(--chassis);color:var(--silver-dim);cursor:pointer;transition:all .2s;position:relative;border-top:2px solid transparent;border-left:1px solid var(--border-lo);border-right:1px solid var(--border-lo)}
+.tab-btn:first-child{border-radius:6px 0 0 0}
+.tab-btn:last-child{border-radius:0 6px 0 0}
+.tab-btn:hover{color:var(--silver);background:var(--chassis2)}
+.tab-btn.active{color:var(--acid);background:var(--chassis2);border-top-color:var(--acid)}
+.tab-btn.active::after{content:'';position:absolute;bottom:-2px;left:0;right:0;height:2px;background:var(--chassis2)}
+.tab-content{display:none}
+.tab-content.active{display:block}
+
+/* ===== HEADER — 303 STYLE ===== */
+.hdr{display:flex;align-items:center;gap:1rem;margin-bottom:0;padding:0.75rem 1rem;background:linear-gradient(180deg,#1e1e30 0%,var(--chassis) 100%);border:1px solid var(--border);border-bottom:none;border-radius:8px 8px 0 0;position:relative;overflow:hidden}
+.hdr::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(192,192,204,0.15),transparent)}
+.hdr h1{font-family:'Oswald',sans-serif;font-size:2rem;font-weight:700;letter-spacing:0.2em;color:var(--silver);text-shadow:0 0 20px var(--acid-glow);line-height:1}
+.hdr h1 span.acid{color:var(--acid)}
+.hdr .ver{font-family:'IBM Plex Mono',monospace;font-size:0.45rem;color:var(--quantum);letter-spacing:0.12em;text-transform:uppercase;background:rgba(191,0,255,0.08);padding:0.12rem 0.35rem;border-radius:2px;border:1px solid rgba(191,0,255,0.15)}
+.hdr .model{font-family:'Oswald',sans-serif;font-size:0.9rem;font-weight:400;letter-spacing:0.25em;color:var(--silver-dim);margin-left:auto}
+/* Roland-style screw dots */
+.screw{width:8px;height:8px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#444,#1a1a1a);border:1px solid #333;box-shadow:inset 0 1px 1px rgba(255,255,255,0.05);flex-shrink:0}
+
+/* ===== PANELS — Hardware chassis look ===== */
+.panel{background:linear-gradient(180deg,var(--chassis2) 0%,var(--chassis) 100%);border:1px solid var(--border);border-radius:4px;padding:0.85rem;margin-bottom:0.6rem;position:relative;overflow:hidden;box-shadow:inset 0 1px 0 rgba(255,255,255,0.03),0 2px 6px rgba(0,0,0,0.3)}
+.panel::before{content:'';position:absolute;top:0;left:0;right:0;height:1px}
+.panel.acid-border{border-color:var(--border)}
+.panel.acid-border::before{background:linear-gradient(90deg,transparent,var(--acid-dim),transparent)}
+.panel.q-border::before{background:linear-gradient(90deg,transparent,var(--qmid),transparent)}
+.panel.fx-border::before{background:linear-gradient(90deg,transparent,var(--fx-dim),transparent)}
+.panel.sci-border::before{background:linear-gradient(90deg,transparent,rgba(0,170,255,0.4),rgba(191,0,255,0.3),transparent)}
+.panel.deco-border::before{background:linear-gradient(90deg,transparent,rgba(255,45,149,0.4),rgba(191,0,255,0.3),transparent)}
+
+.stitle{font-family:'Oswald',sans-serif;font-size:0.8rem;font-weight:500;letter-spacing:0.18em;text-transform:uppercase;margin-bottom:0.6rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.4rem;color:var(--silver-dim)}
+.stitle .l{display:flex;align-items:center;gap:0.5rem}
+.stitle .dot{width:5px;height:5px;border-radius:50%;animation:pulse 2s infinite;box-shadow:0 0 4px currentColor}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
+
+/* ===== TRANSPORT ===== */
+.transport{display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;padding:0.6rem 0.75rem}
+.play-btn{width:42px;height:42px;border-radius:50%;border:2px solid var(--acid);background:rgba(57,255,20,0.03);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0;box-shadow:0 0 8px var(--acid-glow)}
+.play-btn:hover{background:var(--acid-glow);box-shadow:0 0 14px var(--acid-glow)}
+.play-btn.on{border-color:var(--kick);background:rgba(255,60,0,0.06);box-shadow:0 0 8px rgba(255,60,0,0.15)}
+.play-btn svg{fill:var(--acid);width:14px;height:14px}
+.play-btn.on svg{fill:var(--kick)}
+.pg{display:flex;align-items:center;gap:0.4rem}
+.plbl{font-size:0.45rem;color:var(--silver-dark);text-transform:uppercase;letter-spacing:0.15em;font-family:'Oswald',sans-serif}
+.pval{font-size:1rem;font-weight:800;color:var(--acid);min-width:34px;text-align:center;font-family:'JetBrains Mono',monospace}
+.pbtn{width:22px;height:22px;border:1px solid var(--border);background:linear-gradient(180deg,var(--chassis3),var(--chassis));color:var(--silver-dim);font-size:0.75rem;border-radius:3px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 3px rgba(0,0,0,0.3)}
+.pbtn:hover{border-color:var(--acid);color:var(--acid)}
+.pbtn:active{transform:translateY(1px);box-shadow:none}
+.sep{width:1px;height:26px;background:var(--border);flex-shrink:0}
+
+/* ===== SLIDERS — CRITICAL: touch-action fix ===== */
+input[type="range"]{-webkit-appearance:none;appearance:none;height:3px;background:var(--border);border-radius:2px;outline:none;touch-action:none}
+input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:linear-gradient(135deg,#ddd,#888);cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,0.5);border:1px solid #666}
+
+/* WAVEFORM */
+.wavebar{height:50px;background:var(--bg);border:1px solid var(--border-lo);border-radius:4px;margin-bottom:0.6rem;overflow:hidden;position:relative;box-shadow:inset 0 2px 8px rgba(0,0,0,0.4)}
+.wavebar canvas{display:block;width:100%;height:100%}
+.wave-info{position:absolute;top:4px;right:8px;font-size:0.4rem;color:var(--dim);text-transform:uppercase;letter-spacing:0.1em}
+
+/* SEQUENCER */
+.step-nums{display:grid;gap:2px;margin-bottom:2px}
+.sn{font-size:0.45rem;color:var(--dim);text-align:center}
+.sn.bt{color:var(--acid);font-weight:700}
+
+.trow{display:grid;gap:2px;margin-bottom:2px;align-items:center}
+.tlbl{font-size:0.5rem;text-transform:uppercase;letter-spacing:0.1em;text-align:right;padding-right:0.4rem;font-family:'Oswald',sans-serif;font-weight:400}
+
+.step{aspect-ratio:1;border:1px solid var(--border-lo);border-radius:2px;cursor:pointer;position:relative;transition:all .1s;min-height:18px;display:flex;align-items:center;justify-content:center;font-size:0.35rem;user-select:none;background:rgba(0,0,0,0.25);box-shadow:inset 0 1px 2px rgba(0,0,0,0.3)}
+.step:hover{border-color:#555;background:rgba(255,255,255,0.03)}
+.step.bm{border-color:var(--border)}
+.step.on-kick{background:var(--kick);border-color:var(--kick);box-shadow:0 0 6px rgba(255,60,0,0.3)}
+.step.on-snare{background:var(--snare);border-color:var(--snare);box-shadow:0 0 6px rgba(255,213,0,0.3)}
+.step.on-hat{background:var(--hat);border-color:var(--hat);box-shadow:0 0 6px rgba(0,212,255,0.3)}
+.step.on-bass{background:var(--bass);border-color:var(--bass);box-shadow:0 0 6px rgba(57,255,20,0.3)}
+.step.q{background:linear-gradient(135deg,rgba(191,0,255,0.2),rgba(57,255,20,0.08));border-color:var(--quantum);animation:qp 1.2s ease-in-out infinite alternate;box-shadow:0 0 4px var(--qglow)}
+.step.q::after{content:'|ψ⟩';font-size:0.35rem;color:var(--quantum)}
+.step.deco{background:linear-gradient(135deg,rgba(255,45,149,0.15),rgba(191,0,255,0.08));border-color:var(--decohere);animation:decopulse 0.8s ease-in-out infinite alternate}
+.step.deco::after{content:'◇';font-size:0.35rem;color:var(--decohere)}
+@keyframes qp{0%{opacity:.55}100%{opacity:1}}
+@keyframes decopulse{0%{opacity:.4}100%{opacity:.85}}
+.step.ph{box-shadow:0 0 8px rgba(255,255,255,0.4);outline:2px solid rgba(255,255,255,0.6);z-index:2}
+
+.step .vel-bar{position:absolute;bottom:1px;left:1px;right:1px;height:2px;background:rgba(255,255,255,0.3);border-radius:1px}
+
+/* TOGGLE BUTTONS — hardware style */
+.tbtn{font-family:'JetBrains Mono',monospace;font-size:0.45rem;text-transform:uppercase;letter-spacing:0.08em;padding:0.25rem 0.5rem;border:1px solid var(--border);border-radius:3px;background:linear-gradient(180deg,var(--chassis3),var(--chassis));color:var(--silver-dark);cursor:pointer;transition:all .15s;box-shadow:0 1px 3px rgba(0,0,0,0.3)}
+.tbtn:hover{border-color:var(--acid);color:var(--acid)}
+.tbtn:active{transform:translateY(1px);box-shadow:none}
+.tbtn.on{border-color:var(--quantum);color:var(--quantum);background:linear-gradient(180deg,rgba(191,0,255,0.12),rgba(191,0,255,0.04));box-shadow:0 0 6px var(--qglow)}
+.tbtn.deco-on{border-color:var(--decohere);color:var(--decohere);background:linear-gradient(180deg,rgba(255,45,149,0.12),rgba(255,45,149,0.04))}
+
+/* NOTE SELECTOR */
+.nrow{display:flex;gap:2px;flex-wrap:wrap;margin-top:0.5rem}
+.nbtn{padding:0.25rem 0.4rem;border:1px solid var(--border-lo);border-radius:2px;background:linear-gradient(180deg,var(--chassis3),var(--chassis));color:var(--silver-dark);font-size:0.5rem;font-family:'JetBrains Mono',monospace;cursor:pointer;transition:all .1s}
+.nbtn:hover{border-color:var(--acid);color:var(--acid)}
+.nbtn.on{background:var(--acid);color:#000;border-color:var(--acid);font-weight:700;box-shadow:0 0 6px var(--acid-glow)}
+.nbtn.sharp{background:linear-gradient(180deg,#1a1a2e,#111120);border-color:var(--border)}
+
+/* SLIDER PARAMS — with scroll protection */
+.krow{display:flex;flex-direction:column;gap:0.4rem}
+.kgrp{display:grid;grid-template-columns:65px 1fr 38px;align-items:center;gap:0.5rem;padding:2px 0}
+.klbl{font-size:0.45rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--silver-dark);text-align:right;font-family:'Oswald',sans-serif}
+.kslider{-webkit-appearance:none;appearance:none;width:100%;height:6px;background:linear-gradient(180deg,#0a0a14,#181828);border-radius:3px;outline:none;border:1px solid var(--border-lo);touch-action:none}
+.kslider::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:linear-gradient(135deg,#e0e0e8,#888898);cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,0.5),inset 0 1px 0 rgba(255,255,255,0.3);border:1px solid #555}
+.kslider::-moz-range-thumb{width:20px;height:20px;border-radius:50%;background:linear-gradient(135deg,#e0e0e8,#888898);cursor:pointer;border:1px solid #555}
+.kval{font-size:0.55rem;font-weight:700;color:var(--acid);text-align:left;font-family:'JetBrains Mono',monospace}
+
+.kgrp.fx .kslider::-webkit-slider-thumb{background:linear-gradient(135deg,#ffbb88,#aa6633);border-color:var(--fx-dim)}
+.kgrp.fx .kval{color:var(--fx)}
+.kgrp.fx .klbl{color:#887766}
+.kgrp.q .kslider::-webkit-slider-thumb{background:linear-gradient(135deg,#dd88ff,#8833cc);border-color:var(--qmid)}
+.kgrp.q .kval{color:var(--quantum)}
+.kgrp.q .klbl{color:#7755aa}
+
+/* WAVEFORM SELECT */
+.wave-sel{display:flex;gap:3px;margin-bottom:0.5rem}
+.wave-btn{padding:0.3rem 0.6rem;border:1px solid var(--border);border-radius:3px;background:linear-gradient(180deg,var(--chassis3),var(--chassis));color:var(--silver-dark);font-size:0.5rem;font-family:'JetBrains Mono',monospace;cursor:pointer;transition:all .1s;display:flex;align-items:center;gap:0.3rem}
+.wave-btn:hover{border-color:var(--acid);color:var(--acid)}
+.wave-btn.on{background:var(--acid);color:#000;border-color:var(--acid);font-weight:700;box-shadow:0 0 6px var(--acid-glow)}
+.wave-btn svg{width:16px;height:10px}
+
+/* TEMPLATES */
+.tmpl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:0.5rem;margin-top:0.5rem}
+.tmpl-card{background:linear-gradient(180deg,var(--chassis3),var(--chassis));border:1px solid var(--border-lo);border-radius:4px;padding:0.6rem;cursor:pointer;transition:all .2s;position:relative;overflow:hidden}
+.tmpl-card:hover{border-color:var(--acid);transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,0.4)}
+.tmpl-card::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:var(--acid);opacity:0;transition:opacity .2s}
+.tmpl-card:hover::after{opacity:1}
+.tmpl-name{font-family:'Oswald',sans-serif;font-size:0.75rem;font-weight:500;letter-spacing:0.12em;color:var(--acid);margin-bottom:0.2rem}
+.tmpl-desc{font-size:0.4rem;color:var(--dim);line-height:1.4}
+.tmpl-bpm{font-size:0.45rem;color:var(--fx);margin-top:0.2rem}
+
+/* QUANTUM CONTROLS */
+.qctrls{display:flex;gap:0.5rem;flex-wrap:wrap;margin-top:0.5rem}
+.qbtn{font-family:'JetBrains Mono',monospace;font-size:0.45rem;letter-spacing:0.06em;text-transform:uppercase;padding:0.4rem 0.8rem;border:1px solid var(--quantum);border-radius:3px;background:transparent;color:var(--quantum);cursor:pointer;transition:all .2s}
+.qbtn:hover{background:var(--qglow);box-shadow:0 0 10px var(--qglow)}
+.qbtn.pri{background:var(--quantum);color:#000;font-weight:700}
+
+.qstat{font-size:0.5rem;color:var(--dim);margin-top:0.5rem}
+.qstat span{color:var(--quantum)}
+
+/* EXPORT */
+.export-row{display:flex;gap:0.5rem;flex-wrap:wrap;margin-top:0.5rem}
+.xbtn{font-family:'JetBrains Mono',monospace;font-size:0.5rem;padding:0.4rem 1rem;border:1px solid var(--acid);border-radius:3px;background:var(--acid);color:#000;font-weight:700;cursor:pointer;transition:all .2s;text-transform:uppercase;letter-spacing:0.08em;box-shadow:0 0 8px var(--acid-glow)}
+.xbtn:hover{box-shadow:0 0 15px var(--acid-glow)}
+.xbtn.sec{background:transparent;color:var(--acid);box-shadow:none}
+.xprog{font-size:0.45rem;color:var(--acid);margin-top:0.4rem;display:none}
+
+.info{font-size:0.45rem;color:var(--dim);margin-top:0.3rem;line-height:1.5}
+.sci-desc{font-size:0.45rem;color:var(--dim);line-height:1.5;margin-bottom:0.5rem}
+
+/* SCIENCE VISUALS */
+.wave-big{height:110px;background:var(--bg);border:1px solid var(--border-lo);border-radius:4px;overflow:hidden;margin-bottom:0.5rem;position:relative;box-shadow:inset 0 2px 8px rgba(0,0,0,0.4)}
+.wave-big canvas{display:block;width:100%;height:100%}
+.wave-label{position:absolute;top:6px;right:8px;font-size:0.4rem;color:var(--dim);text-transform:uppercase;letter-spacing:0.1em;z-index:1}
+
+.entangle-pair{display:grid;grid-template-columns:1fr auto 1fr;gap:0.75rem;align-items:center;margin:0.75rem 0}
+.ent-node{background:var(--bg);border:1px solid var(--border-lo);border-radius:6px;padding:0.6rem;text-align:center;min-height:65px;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:all .3s;cursor:pointer;box-shadow:inset 0 2px 6px rgba(0,0,0,0.3)}
+.ent-node.lit{border-color:#00e5ff;box-shadow:0 0 18px rgba(0,229,255,0.15)}
+.ent-node.lit.partner{border-color:var(--quantum);box-shadow:0 0 18px var(--qglow)}
+.ent-lbl{font-size:0.45rem;color:var(--dim);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:0.2rem;font-family:'Oswald',sans-serif}
+.ent-note{font-size:1.2rem;font-weight:700;font-family:'Oswald',sans-serif;letter-spacing:0.05em}
+.ent-link{font-size:0.45rem;color:var(--quantum);text-align:center;display:flex;flex-direction:column;align-items:center;gap:0.2rem}
+.ent-link svg{width:36px;height:16px;overflow:visible}
+
+.obs-slider-row{display:flex;align-items:center;gap:0.75rem;margin:0.75rem 0}
+.obs-label{font-size:0.45rem;color:var(--dim);text-transform:uppercase;letter-spacing:0.1em;min-width:70px;text-align:right;font-family:'Oswald',sans-serif}
+.obs-slider{-webkit-appearance:none;appearance:none;flex:1;height:6px;background:var(--border-lo);border-radius:3px;outline:none;touch-action:none}
+.obs-slider::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:linear-gradient(135deg,#88ddff,#3399cc);cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,0.4);border:1px solid #226688}
+.obs-val{font-size:0.55rem;font-weight:700;color:#00aaff;min-width:30px}
+
+.prob-bars{display:flex;gap:3px;align-items:flex-end;height:50px;margin-top:0.5rem;padding-bottom:16px;position:relative}
+.prob-bar{flex:1;border-radius:2px 2px 0 0;transition:height .4s ease,opacity .3s;position:relative;min-width:0}
+.prob-bar .plb{position:absolute;bottom:-14px;left:50%;transform:translateX(-50%);font-size:0.4rem;color:var(--dim)}
+
+.collapse-counter{display:flex;gap:1.5rem;flex-wrap:wrap;margin-top:0.75rem}
+.cc-item{display:flex;flex-direction:column;align-items:center;gap:0.15rem}
+.cc-num{font-family:'Oswald',sans-serif;font-size:1.4rem;font-weight:500;letter-spacing:0.05em;color:#00aaff}
+.cc-lbl{font-size:0.4rem;color:var(--dim);text-transform:uppercase;letter-spacing:0.1em}
+
+.deco-vis{display:flex;gap:4px;align-items:flex-end;height:40px;margin:0.5rem 0}
+.deco-bar{flex:1;border-radius:2px 2px 0 0;transition:height 0.3s ease;min-width:0}
+
+.prob-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin:0.5rem 0}
+.prob-cell{aspect-ratio:1;border:1px solid var(--border-lo);border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:0.45rem;color:var(--dim);cursor:pointer;transition:all .15s;position:relative;background:rgba(0,0,0,0.2)}
+.prob-cell:hover{border-color:var(--quantum)}
+.prob-cell .fill{position:absolute;bottom:0;left:0;right:0;border-radius:0 0 2px 2px;transition:height .2s;opacity:0.4}
+.prob-cell .lbl{position:relative;z-index:1}
+
+/* ===== GUIDE TAB ===== */
+.guide{padding:0.75rem 0}
+.guide-section{background:linear-gradient(180deg,var(--chassis2),var(--chassis));border:1px solid var(--border);border-radius:4px;padding:1rem;margin-bottom:0.75rem;position:relative;overflow:hidden}
+.guide-section::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(57,255,20,0.3),transparent)}
+.guide-title{font-family:'Oswald',sans-serif;font-size:0.85rem;font-weight:500;letter-spacing:0.2em;text-transform:uppercase;color:var(--acid);margin-bottom:0.6rem;display:flex;align-items:center;gap:0.5rem}
+.guide-title .num{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;border:1px solid var(--acid);font-size:0.55rem;color:var(--acid);font-family:'JetBrains Mono',monospace;flex-shrink:0}
+.guide-text{font-size:0.55rem;color:var(--silver-dim);line-height:1.8;margin-bottom:0.5rem}
+.guide-text strong{color:var(--silver)}
+.guide-text .key{display:inline-block;padding:0.1rem 0.35rem;background:var(--chassis3);border:1px solid var(--border);border-radius:3px;font-size:0.5rem;color:var(--acid);font-family:'JetBrains Mono',monospace;margin:0 0.1rem}
+.guide-text .color-dot{display:inline-block;width:8px;height:8px;border-radius:50%;vertical-align:middle;margin:0 0.15rem}
+.guide-demo{background:var(--bg);border:1px solid var(--border-lo);border-radius:4px;padding:0.6rem;margin:0.5rem 0;font-size:0.5rem;color:var(--dim)}
+.guide-demo .label{color:var(--acid);font-weight:700;margin-bottom:0.3rem;font-family:'Oswald',sans-serif;letter-spacing:0.1em;text-transform:uppercase;font-size:0.5rem}
+.guide-flow{display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;margin:0.4rem 0}
+.guide-flow .arrow{color:var(--acid);font-size:0.6rem}
+.guide-flow .node{padding:0.25rem 0.5rem;border:1px solid var(--border);border-radius:3px;font-size:0.45rem;color:var(--silver-dim);background:var(--chassis3)}
+</style>
+</head>
+<body>
+<div class="app">
+
+<div class="hdr">
+  <span class="screw"></span>
+  <h1>Q-<span class="acid">ACID</span> 303</h1>
+  <span class="ver">Quantum</span>
+  <span class="model">Quantum Acid Machine</span>
+  <span class="screw"></span>
+</div>
+
+<!-- TAB BAR -->
+<div class="tab-bar">
+  <button class="tab-btn active" onclick="switchTab('machine')">Machine</button>
+  <button class="tab-btn" onclick="switchTab('guide')">Guide</button>
+</div>
+
+<!-- ===== MACHINE TAB ===== -->
+<div class="tab-content active" id="tab-machine">
+
+<!-- TRANSPORT -->
+<div class="panel acid-border">
+  <div class="transport">
+    <button class="play-btn" id="playBtn" onclick="togglePlay()">
+      <svg viewBox="0 0 24 24" id="playIco"><polygon points="6,3 20,12 6,21"/></svg>
+    </button>
+    <div class="pg"><span class="plbl">BPM</span><button class="pbtn" onclick="chBPM(-1)">-</button><span class="pval" id="bpmV">145</span><button class="pbtn" onclick="chBPM(1)">+</button></div>
+    <div class="sep"></div>
+    <div class="pg"><button class="pbtn" style="width:auto;padding:0 6px;font-size:0.45rem;letter-spacing:0.05em" onclick="tapTempo()">TAP</button></div>
+    <div class="sep"></div>
+    <div class="pg"><span class="plbl">Swing</span><input type="range" id="swingR" min="0" max="80" value="0" style="width:45px" oninput="swing=+this.value;document.getElementById('swingV').textContent=swing+'%'"><span style="font-size:.5rem;color:var(--dim)" id="swingV">0%</span></div>
+    <div class="sep"></div>
+    <div class="pg"><span class="plbl">Pat</span><button class="pbtn" onclick="chPat(-1)">◀</button><span class="pval" style="font-size:.7rem;min-width:18px" id="patV">1</span><button class="pbtn" onclick="chPat(1)">▶</button></div>
+    <div class="sep"></div>
+    <div class="pg"><span class="plbl">Vol</span><input type="range" id="masterV" min="0" max="100" value="75" style="width:45px" oninput="mGain.gain.value=+this.value/100"></div>
+    <div class="sep"></div>
+    <div class="pg"><button class="pbtn" style="width:auto;padding:0 6px;font-size:0.45rem;letter-spacing:0.05em" id="stepsBtn" onclick="toggleSteps()"><span id="stepsV">16</span> STEPS</button></div>
+  </div>
+</div>
+
+<!-- WAVEFORM -->
+<div class="wavebar">
+  <canvas id="wvC"></canvas>
+  <span class="wave-info" id="waveInfo">IDLE</span>
+</div>
+
+<!-- DRUM SEQ -->
+<div class="panel acid-border">
+  <div class="stitle">
+    <span class="l" style="color:var(--kick)"><span class="dot" style="background:var(--kick);box-shadow:0 0 6px var(--kick)"></span>4/4 DRUM MACHINE</span>
+    <div style="display:flex;gap:.4rem">
+      <button class="tbtn" id="qDT" onclick="qDrum=!qDrum;this.classList.toggle('on',qDrum)">⟨ψ⟩ Quantum</button>
+      <button class="tbtn" onclick="clearDrums()">CLR</button>
+    </div>
+  </div>
+  <div class="step-nums" id="stepNums"></div>
+  <div id="drumG"></div>
+</div>
+
+<!-- BASS SEQ -->
+<div class="panel acid-border">
+  <div class="stitle">
+    <span class="l" style="color:var(--acid)"><span class="dot" style="background:var(--acid);box-shadow:0 0 6px var(--acid)"></span>303 ACID LINE</span>
+    <div style="display:flex;gap:.4rem">
+      <button class="tbtn" id="qBT" onclick="qBass=!qBass;this.classList.toggle('on',qBass)">⟨ψ⟩ Quantum</button>
+      <button class="tbtn" id="glideT" onclick="glideMode=!glideMode;this.classList.toggle('on',glideMode)">Glide</button>
+    </div>
+  </div>
+  <div id="bassG"></div>
+  <div class="nrow" id="noteS"></div>
+</div>
+
+<!-- ACID SYNTH with waveform selection -->
+<div class="panel acid-border">
+  <div class="stitle"><span class="l" style="color:var(--acid)"><span class="dot" style="background:var(--acid);box-shadow:0 0 6px var(--acid)"></span>ACID SYNTH ENGINE</span></div>
+  <div class="wave-sel" id="waveSel">
+    <button class="wave-btn on" data-wave="0" onclick="selWave(0,this)">
+      <svg viewBox="0 0 20 12"><path d="M0 6 L5 0 L10 12 L15 0 L20 12" stroke="currentColor" fill="none" stroke-width="1.5"/></svg>
+      SAW
+    </button>
+    <button class="wave-btn" data-wave="1" onclick="selWave(1,this)">
+      <svg viewBox="0 0 20 12"><path d="M0 0 L5 0 L5 12 L10 12 L10 0 L15 0 L15 12 L20 12" stroke="currentColor" fill="none" stroke-width="1.5"/></svg>
+      SQR
+    </button>
+    <button class="wave-btn" data-wave="2" onclick="selWave(2,this)">
+      <svg viewBox="0 0 20 12"><path d="M0 6 L5 0 L10 6 L15 12 L20 6" stroke="currentColor" fill="none" stroke-width="1.5"/></svg>
+      TRI
+    </button>
+    <button class="wave-btn" data-wave="3" onclick="selWave(3,this)">
+      <svg viewBox="0 0 20 12"><path d="M0 6 Q5 0 10 6 Q15 12 20 6" stroke="currentColor" fill="none" stroke-width="1.5"/></svg>
+      SIN
+    </button>
+  </div>
+  <div class="krow" id="acidKnobs"></div>
+</div>
+
+<!-- EFFECTS -->
+<div class="panel fx-border">
+  <div class="stitle"><span class="l" style="color:var(--fx)"><span class="dot" style="background:var(--fx);box-shadow:0 0 6px var(--fx)"></span>EFFECTS CHAIN</span>
+  <div style="display:flex;gap:.4rem">
+    <button class="tbtn" id="scBtn" onclick="toggleSidechain()" style="border-color:var(--kick);color:var(--kick)">Sidechain</button>
+  </div>
+  </div>
+  <div class="krow" id="fxKnobs"></div>
+</div>
+
+<!-- TEMPLATES -->
+<div class="panel acid-border">
+  <div class="stitle"><span class="l" style="color:var(--acid)">TEMPLATES</span></div>
+  <div class="tmpl-grid" id="tmplG"></div>
+</div>
+
+<!-- QUANTUM ENGINE -->
+<div class="panel q-border">
+  <div class="stitle"><span class="l" style="color:var(--quantum)"><span class="dot" style="background:var(--quantum);box-shadow:0 0 6px var(--quantum)"></span>QUANTUM ENGINE</span></div>
+  <p class="info">Superposed steps collapse differently every loop. The pattern never repeats identically.</p>
+  <div class="qctrls">
+    <button class="qbtn pri" onclick="superAll()">Superpose All</button>
+    <button class="qbtn" onclick="collapseAll()">⟨ψ| Collapse</button>
+    <button class="qbtn" onclick="qFill()">Q-Fill</button>
+    <button class="qbtn" onclick="entKB()">Entangle Kick↔Bass</button>
+    <button class="qbtn" onclick="randomize()">Randomize</button>
+    <button class="qbtn" onclick="mutate()">Mutate</button>
+  </div>
+  <div class="qstat" id="qStat">Quantum engine idle</div>
+</div>
+
+<!-- DECOHERENCE -->
+<div class="panel deco-border">
+  <div class="stitle"><span class="l" style="color:var(--decohere)"><span class="dot" style="background:var(--decohere);box-shadow:0 0 6px var(--decohere)"></span>DECOHERENCE ENGINE</span></div>
+  <p class="info">In real quantum systems, superposition degrades over time through interaction with the environment — this is decoherence. Enable it to watch quantum steps gradually collapse into fixed states as the pattern loops. Rate controls how fast coherence is lost.</p>
+  <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.5rem">
+    <button class="tbtn" id="decoBtn" onclick="toggleDecoherence()">Enable Decoherence</button>
+  </div>
+  <div class="krow" style="margin-top:.5rem">
+    <div class="kgrp q">
+      <span class="klbl">Rate</span>
+      <input type="range" class="kslider" id="decoRate" min="1" max="100" value="15" oninput="decoherenceRate=+this.value;document.getElementById('decoRateV').textContent=this.value">
+      <span class="kval" id="decoRateV">15</span>
+    </div>
+    <div class="kgrp q">
+      <span class="klbl">Threshold</span>
+      <input type="range" class="kslider" id="decoThresh" min="10" max="100" value="50" oninput="decoherenceThreshold=+this.value;document.getElementById('decoThreshV').textContent=this.value+'%'">
+      <span class="kval" id="decoThreshV">50%</span>
+    </div>
+  </div>
+  <div class="deco-vis" id="decoVis"></div>
+  <div class="qstat" id="decoStat">Decoherence disabled — quantum states persist indefinitely</div>
+</div>
+
+<!-- WEIGHTED PROBABILITY -->
+<div class="panel q-border">
+  <div class="stitle"><span class="l" style="color:var(--quantum)"><span class="dot" style="background:var(--quantum);box-shadow:0 0 6px var(--quantum)"></span>PROBABILITY WEIGHTS</span></div>
+  <p class="info">Real quantum systems have non-uniform probability distributions. Set the relative weight for each note — heavier weights mean higher collapse probability. This shapes the "quantum scale" the instrument operates in.</p>
+  <div class="prob-grid" id="probGrid"></div>
+  <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.4rem">
+    <button class="tbtn" onclick="setScale('minor')">Minor</button>
+    <button class="tbtn" onclick="setScale('penta')">Pentatonic</button>
+    <button class="tbtn" onclick="setScale('blues')">Blues</button>
+    <button class="tbtn" onclick="setScale('chromatic')">Chromatic</button>
+    <button class="tbtn" onclick="setScale('equal')">Equal</button>
+  </div>
+</div>
+
+<!-- EXPORT -->
+<div class="panel acid-border">
+  <div class="stitle"><span class="l" style="color:var(--acid)">EXPORT</span></div>
+  <p class="info">Record loops to WAV. Each export captures a unique quantum collapse.</p>
+  <div class="export-row">
+    <button class="xbtn" onclick="exportWAV(4)">Export 4 Bars</button>
+    <button class="xbtn" onclick="exportWAV(8)">Export 8 Bars</button>
+    <button class="xbtn" onclick="exportWAV(16)">Export 16 Bars</button>
+    <button class="xbtn sec" onclick="exportWAV(1)">1 Bar</button>
+  </div>
+  <div class="xprog" id="xProg">Rendering...</div>
+</div>
+
+<!-- ====== SCIENCE SECTION ====== -->
+
+<!-- WAVE FUNCTION VISUALIZER -->
+<div class="panel sci-border">
+  <div class="stitle"><span class="l" style="color:#00e5ff"><span class="dot" style="background:#00e5ff;box-shadow:0 0 6px #00e5ff"></span>WAVE FUNCTION VISUALIZER</span></div>
+  <p class="sci-desc">The probability amplitude of the current quantum state. In superposition, all notes interfere creating complex patterns. After collapse, a single clean waveform emerges. The decoherence view shows the gradual loss of quantum coherence over time.</p>
+  <div class="wave-big">
+    <span class="wave-label" id="wfLabel">Superposition</span>
+    <canvas id="wfCanvas"></canvas>
+  </div>
+  <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+    <button class="tbtn" onclick="wfMode='superposition';document.getElementById('wfLabel').textContent='Superposition'">Superposition</button>
+    <button class="tbtn" onclick="wfMode='collapsed';document.getElementById('wfLabel').textContent='Collapsed'">Collapsed</button>
+    <button class="tbtn" onclick="wfMode='interference';document.getElementById('wfLabel').textContent='Interference'">Interference</button>
+    <button class="tbtn" onclick="wfMode='decoherence';document.getElementById('wfLabel').textContent='Decoherence'">Decoherence</button>
+  </div>
+</div>
+
+<!-- ENTANGLED PAIR -->
+<div class="panel sci-border">
+  <div class="stitle"><span class="l" style="color:var(--quantum)"><span class="dot" style="background:var(--quantum);box-shadow:0 0 6px var(--quantum)"></span>ENTANGLED PAIR EXPERIMENT</span></div>
+  <p class="sci-desc">Two instruments share a quantum state. Collapsing one instantly determines the other — always a perfect fifth apart, modeling the non-local correlations of quantum entanglement.</p>
+  <div class="entangle-pair">
+    <div class="ent-node" id="entA" onclick="collapseEnt('A')">
+      <div class="ent-lbl">Instrument α</div>
+      <div class="ent-note" id="entNA" style="color:var(--dim)">|ψ⟩</div>
+    </div>
+    <div class="ent-link">
+      <svg viewBox="0 0 36 16"><line x1="0" y1="8" x2="36" y2="8" stroke="#bf00ff" stroke-width="1" stroke-dasharray="3,3"><animate attributeName="stroke-dashoffset" from="0" to="-12" dur="1s" repeatCount="indefinite"/></line></svg>
+      <span>entangled</span>
+    </div>
+    <div class="ent-node" id="entB" onclick="collapseEnt('B')">
+      <div class="ent-lbl">Instrument β</div>
+      <div class="ent-note" id="entNB" style="color:var(--dim)">|ψ⟩</div>
+    </div>
+  </div>
+  <button class="tbtn" onclick="reEntangle()">Re-entangle</button>
+  <div class="qstat" id="entStat">Both instruments in superposition — click one to collapse the pair</div>
+</div>
+
+<!-- OBSERVER EFFECT -->
+<div class="panel sci-border">
+  <div class="stitle"><span class="l" style="color:#facc15"><span class="dot" style="background:#facc15;box-shadow:0 0 6px #facc15"></span>OBSERVER EFFECT</span></div>
+  <p class="sci-desc">Observation intensity controls how much the listener collapses the quantum state. At 0%, full superposition with maximum uncertainty. At 100%, fully deterministic. This directly modulates the live synth engine — filter brightness, note range, and trigger probability all respond to observation level.</p>
+  <div class="obs-slider-row">
+    <span class="obs-label">Observers</span>
+    <input type="range" class="obs-slider" id="obsSlider" min="0" max="100" value="0" oninput="updateObserver()">
+    <span class="obs-val" id="obsVal">0%</span>
+  </div>
+  <div class="prob-bars" id="probBars"></div>
+  <div style="height:10px"></div>
+  <div class="qstat" id="obsStat">0% observation — full superposition, maximum uncertainty</div>
+</div>
+
+<!-- STATISTICS -->
+<div class="panel sci-border">
+  <div class="stitle"><span class="l" style="color:#00e5ff"><span class="dot" style="background:#00e5ff;box-shadow:0 0 6px #00e5ff"></span>QUANTUM STATISTICS</span></div>
+  <p class="sci-desc">Every collapse is logged. P(identical) across all 64 steps ≈ 10⁻²⁸ — each pattern is a unique quantum event.</p>
+  <div class="collapse-counter">
+    <div class="cc-item"><span class="cc-num" id="ccTotal">0</span><span class="cc-lbl">Total Collapses</span></div>
+    <div class="cc-item"><span class="cc-num" id="ccUnique">0</span><span class="cc-lbl">Unique Patterns</span></div>
+    <div class="cc-item"><span class="cc-num" id="ccEntropy" style="color:var(--quantum)">0.00</span><span class="cc-lbl">Shannon Entropy</span></div>
+    <div class="cc-item"><span class="cc-num" id="ccProb" style="color:var(--acid)">—</span><span class="cc-lbl">P(repeat)</span></div>
+    <div class="cc-item"><span class="cc-num" id="ccDeco" style="color:var(--decohere)">0</span><span class="cc-lbl">Decoherence Events</span></div>
+  </div>
+</div>
+
+</div><!-- end tab-machine -->
+
+<!-- ===== GUIDE TAB ===== -->
+<div class="tab-content" id="tab-guide">
+<div class="guide">
+
+<div class="guide-section" style="border-color:var(--quantum)">
+  <div class="guide-title" style="color:var(--quantum)"><span class="num" style="border-color:var(--quantum);color:var(--quantum)">•</span> WHAT THIS IS AND WHY IT'S DIFFERENT</div>
+  <div class="guide-text">
+    Every drum machine and sequencer that exists right now is deterministic. You program a pattern, you press play, it plays back the same thing. Every time. That's been true since the first drum machines in the 1970s — and it's still true of every DAW, every groovebox, every hardware sequencer made today.<br><br>
+
+    Q-ACID 303 isn't deterministic. It uses ideas from quantum mechanics to make patterns that are fundamentally non-repeatable. Not "random" in the way a dice roll is random — something weirder.<br><br>
+
+    <strong>The short version:</strong> In quantum physics, particles don't have a definite state until you measure them. Before measurement, they exist in a <strong>superposition</strong> — a blend of all possible states at once. The act of looking forces them to "pick one." That's called <strong>wave function collapse</strong>. And when two particles are <strong>entangled</strong>, measuring one instantly determines the other, no matter how far apart they are.<br><br>
+
+    Those aren't metaphors here. They're the actual rules the sequencer runs on. A step in superposition doesn't have a value yet — it contains all possible values simultaneously, weighted by probability. Each time the loop cycles, it collapses into something. Next cycle, it collapses into something else. The pattern literally doesn't exist in a fixed form until you listen to it.<br><br>
+
+    <strong>Why that matters musically:</strong> Normal electronic music is a recording of a decision. This is more like a recording of a probability. Two people listening to the same pattern at the same time would hear different things. An exported WAV captures one specific collapse — a snapshot of one possibility out of an astronomical number. It won't happen again.
+  </div>
+</div>
+
+<div class="guide-section">
+  <div class="guide-title"><span class="num">1</span> GETTING STARTED</div>
+  <div class="guide-text">
+    <strong>Q-ACID 303</strong> — drum machine, bass synth, quantum physics experiment. Somewhere between a 303 and something that doesn't exist yet.<br><br>
+    <strong>Quick start:</strong> Hit <span class="key">SPACE</span> to play/stop. Load a template. Mess with the knobs. See what happens.<br><br>
+    <strong>Keyboard shortcuts:</strong><br>
+    <span class="key">SPACE</span> Play / Stop &nbsp;
+    <span class="key">T</span> Tap Tempo &nbsp;
+    <span class="key">↑</span><span class="key">↓</span> BPM ±1 &nbsp;
+    <span class="key">←</span><span class="key">→</span> Switch pattern
+  </div>
+</div>
+
+<div class="guide-section">
+  <div class="guide-title"><span class="num">2</span> SIGNAL FLOW</div>
+  <div class="guide-text">
+    Sound goes through this chain — each section on the Machine tab is a stage in the path:
+  </div>
+  <div class="guide-demo">
+    <div class="guide-flow">
+      <span class="node">DRUM MACHINE</span><span class="arrow">→</span>
+      <span class="node">303 ACID LINE</span><span class="arrow">→</span>
+      <span class="node">ACID SYNTH</span><span class="arrow">→</span>
+      <span class="node">DISTORTION</span><span class="arrow">→</span>
+      <span class="node">PHASER</span><span class="arrow">→</span>
+      <span class="node">DELAY</span><span class="arrow">→</span>
+      <span class="node">REVERB</span><span class="arrow">→</span>
+      <span class="node" style="border-color:var(--acid);color:var(--acid)">OUTPUT</span>
+    </div>
+  </div>
+</div>
+
+<div class="guide-section">
+  <div class="guide-title"><span class="num">3</span> DRUM MACHINE</div>
+  <div class="guide-text">
+    16-step sequencer, three tracks:<br><br>
+    <span class="color-dot" style="background:var(--kick)"></span> <strong>KICK</strong> — Sine wave pitch sweep (170→35Hz). Steps 1, 5, 9, 13 gets you a four-on-the-floor, but do whatever.<br><br>
+    <span class="color-dot" style="background:var(--snare)"></span> <strong>SNARE</strong> — Noise burst + triangle osc. Steps 5 and 13 for a backbeat, or scatter them around.<br><br>
+    <span class="color-dot" style="background:var(--hat)"></span> <strong>HI-HAT</strong> — High-pass filtered noise. Offbeats and rolls add movement.<br><br>
+    Click a step to toggle it. White outline = playhead.
+  </div>
+</div>
+
+<div class="guide-section">
+  <div class="guide-title"><span class="num">4</span> 303 ACID LINE</div>
+  <div class="guide-text">
+    Monophonic bass sequencer, loosely inspired by the TB-303.<br><br>
+    1. Pick a note from the buttons below the grid (C2–G3)<br>
+    2. Click a step to place it<br>
+    3. Click again to remove<br><br>
+    <strong>Glide mode:</strong> GLIDE button makes notes slide into each other (portamento). Tends to sound good for acid lines but it's up to you.
+  </div>
+</div>
+
+<div class="guide-section">
+  <div class="guide-title"><span class="num">5</span> ACID SYNTH ENGINE</div>
+  <div class="guide-text">
+    Controls that shape how the bass voice sounds:<br><br>
+    <strong>Waveform:</strong> SAW (buzzy, typical 303), SQR (hollower, thicker), TRI (softer), SIN (clean sub)<br><br>
+    <strong>Cutoff</strong> — Filter frequency. Low = dark. High = bright.<br>
+    <strong>Reso</strong> — Filter resonance. Higher values get more squelchy.<br>
+    <strong>Env Mod</strong> — How much the filter opens per note. More of this = more acid character.<br>
+    <strong>Attack</strong> — How fast notes fade in. Low = punchy. Higher = slower swell.<br>
+    <strong>Decay</strong> — Filter sweep length. Short = blippy. Long = swoopy.<br>
+    <strong>Release</strong> — How long the tail rings out.<br>
+    <strong>Accent</strong> — Boosts volume and filter. More = more aggressive.<br>
+    <strong>Sub Vol</strong> — Sub-oscillator level (one octave down). Adds weight.<br>
+    <strong>Glide</strong> — Slide time when Glide mode is on. Lower = quick, higher = slow.
+  </div>
+  <div class="guide-demo">
+    <div class="label">Starting point</div>
+    Cutoff: 400–800 · Reso: 15–22 · Env Mod: 60–85 · Decay: 80–150 · SAW waveform · Glide ON — tweak from there
+  </div>
+</div>
+
+<div class="guide-section">
+  <div class="guide-title"><span class="num">6</span> EFFECTS CHAIN</div>
+  <div class="guide-text">
+    <strong>Delay</strong> — Echo mix level. Works with Feedback and D.Time.<br>
+    <strong>Feedback</strong> — Echo repeats. Gets intense above 70 or so.<br>
+    <strong>D.Time</strong> — Delay time in ms. Defaults to ¾ note synced to BPM.<br>
+    <strong>Reverb</strong> — Room ambience. A little can go a long way.<br>
+    <strong>Distort</strong> — Waveshaper saturation. Dirties things up.<br>
+    <strong>Phaser</strong> — Sweeping filter effect. Adds some movement.<br>
+    <strong>Ph.Rate</strong> — Phaser sweep speed.<br>
+    <strong>Sidechain</strong> — Kick-triggered volume ducking on the bass. That pumping thing.
+  </div>
+</div>
+
+<div class="guide-section" style="border-color:var(--quantum)">
+  <div class="guide-title" style="color:var(--quantum)"><span class="num" style="border-color:var(--quantum);color:var(--quantum)">7</span> QUANTUM ENGINE</div>
+  <div class="guide-text">
+    The unusual part. Instead of steps being just ON or OFF, they can be in <strong>superposition</strong> — kind of both at once, resolving differently each loop.<br><br>
+    <strong>How to use:</strong> Hit the <span class="key">⟨ψ⟩ Quantum</span> toggle on a section, then click steps — they go purple. Each loop, those steps randomly decide whether to fire or not.<br><br>
+    <strong>Superpose All</strong> — Every step goes quantum. Full uncertainty.<br>
+    <strong>⟨ψ| Collapse</strong> — Locks all quantum steps into fixed values. That particular pattern probably won't happen again (odds are around 10⁻²⁸).<br>
+    <strong>Q-Fill</strong> — Adds quantum states to empty steps, leaves your programmed ones alone.<br>
+    <strong>Entangle Kick↔Bass</strong> — Links them. Kick hits spawn correlated bass notes.<br>
+    <strong>Randomize</strong> — Fresh pattern, weighted by probability settings.<br>
+    <strong>Mutate</strong> — Small random tweaks to what's already there.
+  </div>
+</div>
+
+<div class="guide-section" style="border-color:var(--decohere)">
+  <div class="guide-title" style="color:var(--decohere)"><span class="num" style="border-color:var(--decohere);color:var(--decohere)">8</span> DECOHERENCE</div>
+  <div class="guide-text">
+    In actual quantum physics, superposition breaks down over time as things interact with their environment. That's decoherence.<br><br>
+    Turn it on and quantum steps gradually lose coherence each loop. They go from purple (quantum) to pink (decohering) and eventually collapse into fixed hits. So the pattern sort of starts loose and crystallizes into something solid over time.<br><br>
+    <strong>Rate</strong> — How fast coherence degrades per loop.<br>
+    <strong>Threshold</strong> — When the visual transition to "decohering" kicks in.
+  </div>
+</div>
+
+<div class="guide-section" style="border-color:var(--quantum)">
+  <div class="guide-title" style="color:var(--quantum)"><span class="num" style="border-color:var(--quantum);color:var(--quantum)">9</span> PROBABILITY WEIGHTS</div>
+  <div class="guide-text">
+    Real quantum systems don't have uniform probabilities. The grid lets you weight each note (C–B) from 1 to 5. Heavier = shows up more when quantum steps collapse.<br><br>
+    <strong>Scale presets:</strong> Minor, Pentatonic, Blues, Chromatic, Equal. Helps keep things sounding musical even when the quantum engine is doing its thing.
+  </div>
+  <div class="guide-demo">
+    <div class="label">Worth trying</div>
+    If you're working in C minor, the Minor preset weights C, Eb, F, G heavier — so collapses tend to land on notes that fit.
+  </div>
+</div>
+
+<div class="guide-section">
+  <div class="guide-title"><span class="num" style="border-color:var(--acid)">10</span> WORKFLOW IDEAS</div>
+  <div class="guide-text">
+    <strong>One way to build something:</strong><br>
+    1. Load a template that's in the right ballpark<br>
+    2. Set BPM (TAP to match something you're playing alongside)<br>
+    3. Mess with Cutoff and Reso — they change the character the most<br>
+    4. Q-Fill empty steps for variation that shifts each loop<br>
+    5. Try Sidechain if you want the pumping feel<br>
+    6. Decoherence is interesting for patterns that evolve on their own<br>
+    7. Export as WAV when you land on something you like<br><br>
+    <strong>Playing live:</strong> 4 pattern banks via ←→. Superpose All then Collapse can work as a kind of drop. Mutate for subtle shifts between sections.
+  </div>
+</div>
+
+<div class="guide-section">
+  <div class="guide-title"><span class="num">11</span> SCIENCE MODULES</div>
+  <div class="guide-text">
+    The bottom of the Machine tab has physics visualizations that also affect the sound:<br><br>
+    <strong>Wave Function Visualizer</strong> — Shows the quantum state as waveforms. Superposition, Collapsed, Interference, and Decoherence views.<br><br>
+    <strong>Entangled Pair</strong> — Click one instrument, both resolve. They land a perfect fifth apart (C↔G, D↔A, etc.).<br><br>
+    <strong>Observer Effect</strong> — This one actually changes the live sound. More observation = brighter filter, narrower note range, more predictable triggers. At 0% it's full chaos, at 100% everything's deterministic.<br><br>
+    <strong>Quantum Statistics</strong> — Logs collapse events, unique patterns, entropy, decoherence counts.
+  </div>
+</div>
+
+<div class="guide-section" style="border-color:#00aaff">
+  <div class="guide-title" style="color:#00aaff"><span class="num" style="border-color:#00aaff;color:#00aaff">≡</span> THE MATHS</div>
+  <div class="guide-text">
+    The quantum state of a single sequencer step in Dirac notation:<br><br>
+
+    <strong style="color:var(--silver);font-size:0.65rem">|step⟩ = α|on⟩ + β|off⟩</strong><br><br>
+
+    α and β are complex probability amplitudes, |α|² + |β|² = 1. The probability of triggering on a given cycle is |α|². The instruments set these differently — kick has |α|² ≈ 0.6, snare ≈ 0.5, hat ≈ 0.65.<br><br>
+
+    For bass notes, superposition extends across the note space:<br><br>
+
+    <strong style="color:var(--silver);font-size:0.65rem">|bass⟩ = Σᵢ cᵢ|noteᵢ⟩</strong><br><br>
+
+    The coefficients cᵢ are shaped by the probability weight grid. Setting weights to a minor scale concentrates amplitude on scale-degree notes, so collapses tend toward musically coherent results. Analogous to how a potential energy landscape determines which quantum states are more probable.<br><br>
+
+    Probability of two 64-step collapses producing identical results across all four tracks:<br><br>
+
+    <strong style="color:var(--silver);font-size:0.65rem">P(identical) ≈ (0.6)¹⁶ × (0.5)¹⁶ × (0.65)¹⁶ × (1/7)¹⁶ ≈ 10⁻²⁸</strong><br><br>
+
+    About 10 billion times less likely than winning the lottery twice in a row.<br><br>
+
+    <strong>Decoherence</strong> models the quantum-to-classical transition. In real systems, off-diagonal density matrix elements decay exponentially:<br><br>
+
+    <strong style="color:var(--silver);font-size:0.65rem">ρᵢⱼ(t) → ρᵢⱼ(0)e⁻ᵗ/τ</strong><br><br>
+
+    where τ is the decoherence time. Here, each loop increments a coherence counter per step. When it crosses a threshold, the step irreversibly collapses — modelling how superposition is lost through environmental coupling.<br><br>
+
+    <strong>Entanglement</strong> between kick and bass produces non-separable correlations. A kick on step N forces a bass note on the same step, constrained to harmonically related intervals. The joint probability P(kick ∧ bass) ≠ P(kick) × P(bass) — the formal condition for entanglement.<br><br>
+
+    This currently runs on pseudorandom number generation, not quantum hardware. The musical output is structurally the same either way — connecting to a real quantum backend (IBM Quantum, etc.) would make the randomness genuinely irreducible rather than algorithmically derived.
+  </div>
+</div>
+
+</div>
+</div><!-- end tab-guide -->
+
+<script>
+// ===== AUDIO ENGINE =====
+const AC=new(window.AudioContext||window.webkitAudioContext)();
+const mGain=AC.createGain();mGain.gain.value=0.75;
+
+// Sidechain compressor node
+const scCompressor=AC.createDynamicsCompressor();
+scCompressor.threshold.value=-24;scCompressor.knee.value=12;
+scCompressor.ratio.value=12;scCompressor.attack.value=0.003;scCompressor.release.value=0.15;
+let sidechainOn=false;
+const scGain=AC.createGain();scGain.gain.value=1;
+
+// Effects chain
+const distNode=AC.createWaveShaper();distNode.oversample='4x';
+const delayNode=AC.createDelay(1.0);delayNode.delayTime.value=0.375;
+const delayFB=AC.createGain();delayFB.gain.value=0.3;
+const delayMix=AC.createGain();delayMix.gain.value=0.25;
+const delayDry=AC.createGain();delayDry.gain.value=1;
+const reverbGain=AC.createGain();reverbGain.gain.value=0.2;
+const reverbConv=AC.createConvolver();
+
+// Phaser LFO
+const phaserLFO=AC.createOscillator();const phaserLFOGain=AC.createGain();
+phaserLFO.frequency.value=0.4;phaserLFOGain.gain.value=500;
+phaserLFO.connect(phaserLFOGain);phaserLFO.start();
+const phaserFilters=[];
+for(let i=0;i<4;i++){
+  const f=AC.createBiquadFilter();f.type='allpass';f.frequency.value=1000+i*500;f.Q.value=5;
+  phaserLFOGain.connect(f.frequency);phaserFilters.push(f);
+}
+const phaserMix=AC.createGain();phaserMix.gain.value=0;
+const phaserDry=AC.createGain();phaserDry.gain.value=1;
+
+function buildReverb(dur=1.5,decay=2){
+  const len=AC.sampleRate*dur,buf=AC.createBuffer(2,len,AC.sampleRate);
+  for(let ch=0;ch<2;ch++){const d=buf.getChannelData(ch);for(let i=0;i<len;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/len,decay)}
+  return buf;
+}
+reverbConv.buffer=buildReverb();
+
+// Wire: distNode -> phaserDry -> delayDry -> scGain -> mGain -> dest
+//                -> phaserChain -> phaserMix -> delayDry
+//                -> delayNode -> delayFB -> delayNode
+//                               -> delayMix -> scGain
+//                -> reverbConv -> reverbGain -> scGain
+distNode.connect(phaserDry);
+let phaserInput=distNode;
+for(let i=0;i<phaserFilters.length;i++){
+  if(i===0)distNode.connect(phaserFilters[0]);
+  else phaserFilters[i-1].connect(phaserFilters[i]);
+}
+phaserFilters[phaserFilters.length-1].connect(phaserMix);
+
+phaserDry.connect(delayDry);
+phaserMix.connect(delayDry);
+
+distNode.connect(delayNode);
+delayNode.connect(delayFB);delayFB.connect(delayNode);
+delayNode.connect(delayMix);
+distNode.connect(reverbConv);reverbConv.connect(reverbGain);
+delayDry.connect(scGain);delayMix.connect(scGain);reverbGain.connect(scGain);
+scGain.connect(mGain);
+mGain.connect(AC.destination);
+
+function mkDist(amt){const n=256,c=new Float32Array(n);for(let i=0;i<n;i++){const x=(i*2)/n-1;c[i]=((3+amt)*x*20*(Math.PI/180))/(Math.PI+amt*Math.abs(x))}return c}
+distNode.curve=mkDist(3);
+
+let fxP={delay:0.25,feedback:0.3,delayTime:0.375,reverb:0.2,distAmt:30,phaser:0,phaserRate:0.4};
+
+function updateFX(){
+  delayMix.gain.value=fxP.delay;
+  delayFB.gain.value=Math.min(fxP.feedback,0.85);
+  delayNode.delayTime.value=fxP.delayTime;
+  reverbGain.gain.value=fxP.reverb;
+  distNode.curve=mkDist(fxP.distAmt/10);
+  phaserMix.gain.value=fxP.phaser;
+  phaserDry.gain.value=1-fxP.phaser*0.5;
+  phaserLFO.frequency.value=fxP.phaserRate;
+}
+
+function toggleSidechain(){
+  sidechainOn=!sidechainOn;
+  document.getElementById('scBtn').classList.toggle('on',sidechainOn);
+}
+
+// ===== SYNTH PARAMS =====
+let sP={cutoff:800,resonance:15,envMod:65,decay:150,accent:55,attack:5,release:80,subVol:20,glide:40,waveform:0};
+let glideMode=false;
+let lastBassFreq=0;
+
+const NOTES=['C2','C#2','D2','D#2','E2','F2','F#2','G2','G#2','A2','A#2','B2','C3','C#3','D3','D#3','E3','F3','F#3','G3'];
+const NF={'C2':65.41,'C#2':69.30,'D2':73.42,'D#2':77.78,'E2':82.41,'F2':87.31,'F#2':92.50,'G2':98,'G#2':103.83,'A2':110,'A#2':116.54,'B2':123.47,'C3':130.81,'C#3':138.59,'D3':146.83,'D#3':155.56,'E3':164.81,'F3':174.61,'F#3':185,'G3':196};
+let selNote='C2';
+
+// Probability weights for quantum note selection (index 0-6 = C,D,E,F,G,A,B)
+let noteWeights=[1,1,1,1,1,1,1]; // Equal by default
+
+function weightedNoteSelect(range){
+  const candidates=NOTES.slice(0,range||NOTES.length);
+  const weighted=candidates.map(n=>{
+    const base=n.replace(/[0-9]/g,'').replace('#','');
+    const idx='CDEFGAB'.indexOf(base);
+    return{note:n,w:Math.max(noteWeights[idx],0)};
+  });
+  // Filter out zero-weight notes
+  const valid=weighted.filter(x=>x.w>0);
+  if(valid.length===0)return candidates[Math.floor(Math.random()*candidates.length)];
+  const total=valid.reduce((s,x)=>s+x.w,0);
+  let r=Math.random()*total;
+  for(const w of valid){r-=w.w;if(r<=0)return w.note}
+  return valid[valid.length-1].note;
+}
+
+// ===== DRUM SOUNDS =====
+function playKick(dest,t){
+  const o=AC.createOscillator(),g=AC.createGain();
+  o.type='sine';o.frequency.setValueAtTime(170,t);o.frequency.exponentialRampToValueAtTime(35,t+0.14);
+  g.gain.setValueAtTime(0.9,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.45);
+  o.connect(g);g.connect(dest);o.start(t);o.stop(t+0.45);
+  // Click transient
+  const o2=AC.createOscillator(),g2=AC.createGain();
+  o2.type='square';o2.frequency.setValueAtTime(440,t);o2.frequency.exponentialRampToValueAtTime(50,t+0.015);
+  g2.gain.setValueAtTime(0.35,t);g2.gain.exponentialRampToValueAtTime(0.001,t+0.03);
+  o2.connect(g2);g2.connect(dest);o2.start(t);o2.stop(t+0.04);
+  // Sidechain duck
+  if(sidechainOn){scGain.gain.setValueAtTime(0.1,t);scGain.gain.linearRampToValueAtTime(1,t+0.12)}
+}
+
+function playSnare(dest,t){
+  const bsz=AC.sampleRate*0.14,buf=AC.createBuffer(1,bsz,AC.sampleRate),d=buf.getChannelData(0);
+  for(let i=0;i<bsz;i++)d[i]=Math.random()*2-1;
+  const n=AC.createBufferSource();n.buffer=buf;
+  const ng=AC.createGain(),hp=AC.createBiquadFilter();hp.type='highpass';hp.frequency.value=2500;
+  ng.gain.setValueAtTime(0.45,t);ng.gain.exponentialRampToValueAtTime(0.001,t+0.14);
+  n.connect(hp);hp.connect(ng);ng.connect(dest);n.start(t);n.stop(t+0.14);
+  const o=AC.createOscillator(),g=AC.createGain();o.type='triangle';
+  o.frequency.setValueAtTime(220,t);o.frequency.exponentialRampToValueAtTime(80,t+0.04);
+  g.gain.setValueAtTime(0.35,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.08);
+  o.connect(g);g.connect(dest);o.start(t);o.stop(t+0.08);
+}
+
+function playHat(dest,t,open=false){
+  const dur=open?0.18:0.05,bsz=AC.sampleRate*dur,buf=AC.createBuffer(1,bsz,AC.sampleRate),d=buf.getChannelData(0);
+  for(let i=0;i<bsz;i++)d[i]=Math.random()*2-1;
+  const s=AC.createBufferSource();s.buffer=buf;
+  const g=AC.createGain(),hp=AC.createBiquadFilter();hp.type='highpass';hp.frequency.value=7500;
+  const bp=AC.createBiquadFilter();bp.type='bandpass';bp.frequency.value=10000;bp.Q.value=1;
+  g.gain.setValueAtTime(0.22,t);g.gain.exponentialRampToValueAtTime(0.001,t+dur);
+  s.connect(hp);hp.connect(bp);bp.connect(g);g.connect(dest);s.start(t);s.stop(t+dur);
+}
+
+function playAcid(dest,t,note,cutoffBoost,resoBoost){
+  cutoffBoost=cutoffBoost||0;resoBoost=resoBoost||0;
+  const freq=NF[note]||130.81;
+  const{cutoff,resonance,envMod,decay,accent,attack,release,subVol,glide,waveform}=sP;
+  const liveCutoff=Math.min(cutoff+cutoffBoost,15000);
+  const liveReso=Math.min(resonance+resoBoost,30);
+
+  const waveTypes=['sawtooth','square','triangle','sine'];
+  const o=AC.createOscillator();
+  o.type=waveTypes[waveform]||'sawtooth';
+
+  // Glide/portamento
+  const prevFreq=lastBassFreq;
+  if(glideMode&&prevFreq>0){
+    o.frequency.setValueAtTime(prevFreq,t);
+    o.frequency.exponentialRampToValueAtTime(freq,t+glide/1000);
+  }else{
+    o.frequency.setValueAtTime(freq,t);
+  }
+
+  // Sub oscillator
+  const sub=AC.createOscillator();sub.type='sine';
+  if(glideMode&&prevFreq>0){
+    sub.frequency.setValueAtTime(prevFreq/2,t);
+    sub.frequency.exponentialRampToValueAtTime(freq/2,t+glide/1000);
+  }else{
+    sub.frequency.setValueAtTime(freq/2,t);
+  }
+  lastBassFreq=freq;
+  const subG=AC.createGain();subG.gain.value=subVol/100*0.25;sub.connect(subG);
+
+  // Filter with ADSR-style envelope
+  const f=AC.createBiquadFilter();f.type='lowpass';f.Q.value=liveReso;
+  const envAmt=liveCutoff+(envMod/100)*4500*(1+accent/150);
+  const atkTime=Math.max(attack/1000,0.002);
+  f.frequency.setValueAtTime(liveCutoff,t);
+  f.frequency.linearRampToValueAtTime(Math.min(envAmt,15000),t+atkTime);
+  f.frequency.exponentialRampToValueAtTime(Math.max(liveCutoff,20),t+atkTime+decay/1000);
+
+  // Amp envelope with attack & release
+  const g=AC.createGain();
+  const vol=0.22+(accent/100)*0.15;
+  const relTime=release/1000;
+  g.gain.setValueAtTime(0.001,t);
+  g.gain.linearRampToValueAtTime(vol,t+atkTime);
+  g.gain.setValueAtTime(vol*0.8,t+atkTime+0.01);
+  g.gain.exponentialRampToValueAtTime(0.001,t+atkTime+decay/1000+relTime);
+
+  const totalDur=atkTime+decay/1000+relTime+0.05;
+  o.connect(f);subG.connect(f);f.connect(g);g.connect(dest);
+  o.start(t);o.stop(t+totalDur);sub.start(t);sub.stop(t+totalDur);
+}
+
+function selWave(idx,el){
+  sP.waveform=idx;
+  document.querySelectorAll('.wave-btn').forEach(b=>b.classList.remove('on'));
+  el.classList.add('on');
+}
+
+// ===== STATE =====
+let numSteps=16;
+let bpm=145,swing=0,curPat=0,curStep=-1,playing=false,nextT=0,tmID=null;
+let qDrum=false,qBass=false,entangled=false;
+let observerLevel=0;
+
+// Decoherence
+let decoherenceOn=false,decoherenceRate=15,decoherenceThreshold=50;
+let decoherenceState=new Array(numSteps*4).fill(0);
+let decoEventCount=0;
+
+function toggleDecoherence(){
+  decoherenceOn=!decoherenceOn;
+  document.getElementById('decoBtn').classList.toggle('deco-on',decoherenceOn);
+  if(!decoherenceOn){decoherenceState.fill(0);document.getElementById('decoStat').textContent='Decoherence disabled — quantum states persist indefinitely'}
+  else document.getElementById('decoStat').innerHTML='Decoherence <span style="color:var(--decohere)">active</span> — quantum coherence will degrade each loop';
+  refreshUI();
+}
+
+function mkPat(){return{kick:Array(32).fill(false),snare:Array(32).fill(false),hat:Array(32).fill(false),bass:Array(32).fill(null),q:{kick:Array(32).fill(false),snare:Array(32).fill(false),hat:Array(32).fill(false),bass:Array(32).fill(false)},vel:{kick:Array(32).fill(100),snare:Array(32).fill(100),hat:Array(32).fill(100),bass:Array(32).fill(100)}}}
+let pats=[mkPat(),mkPat(),mkPat(),mkPat()];
+function P(){return pats[curPat]}
+
+function toggleSteps(){
+  numSteps=numSteps===16?32:16;
+  document.getElementById('stepsV').textContent=numSteps;
+  decoherenceState=new Array(numSteps*4).fill(0);
+  rebuildGrid();
+  if(playing){curStep=-1;nextT=AC.currentTime+0.05}
+}
+
+function rebuildGrid(){
+  updateGridCSS();
+  buildStepNums();buildDG();buildBG();refreshUI();
+}
+
+function updateGridCSS(){
+  const cols=`52px repeat(${numSteps},1fr)`;
+  document.querySelectorAll('.step-nums,.trow').forEach(el=>{el.style.gridTemplateColumns=cols});
+}
+
+// ===== TEMPLATES =====
+const templates=[
+  {name:'CLASSIC ACID',desc:'Four-on-the-floor with squelchy 303',bpm:138,
+   kick:[1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0],snare:[0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0],hat:[1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,1],
+   bass:['C2',null,null,'C2',null,'D#2',null,null,'C2',null,'G2',null,'F2',null,'D#2','C2'],
+   synth:{cutoff:600,resonance:18,envMod:75,decay:120,accent:65,attack:3,release:60,subVol:15,glide:30,waveform:0}},
+  {name:'HARD ACID',desc:'Pounding kicks, screaming resonance',bpm:150,
+   kick:[1,0,0,1,1,0,0,1,1,0,0,1,1,0,1,0],snare:[0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,1],hat:[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+   bass:['C2','C2',null,'D#2',null,null,'F2','F2','G2',null,null,'F2',null,'D#2','C2','C2'],
+   synth:{cutoff:400,resonance:22,envMod:85,decay:80,accent:80,attack:2,release:40,subVol:25,glide:20,waveform:0}},
+  {name:'MINIMAL QUANTUM',desc:'Sparse beats, heavy quantum uncertainty',bpm:140,
+   kick:[1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0],snare:[0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0],hat:[0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0],
+   bass:['C2',null,null,null,null,null,null,null,'G2',null,null,null,null,null,null,null],
+   synth:{cutoff:500,resonance:20,envMod:70,decay:200,accent:40,attack:8,release:120,subVol:20,glide:60,waveform:0},quantumFill:true},
+  {name:'WAREHOUSE RAVE',desc:'Relentless 4/4, offbeat hats, driving bass',bpm:148,
+   kick:[1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0],snare:[0,0,0,0,1,0,0,1,0,0,0,0,1,0,0,1],hat:[0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0],
+   bass:['C2',null,'C2',null,'D#2',null,null,'C2','F2',null,'D#2',null,'C2',null,'G2','F2'],
+   synth:{cutoff:700,resonance:16,envMod:60,decay:130,accent:50,attack:3,release:70,subVol:18,glide:25,waveform:0}},
+  {name:'DARK ACID',desc:'Menacing low-end, slow filter sweeps',bpm:134,
+   kick:[1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0],snare:[0,0,0,0,1,0,0,0,0,0,1,0,1,0,0,0],hat:[1,0,0,1,0,0,1,0,0,1,0,0,1,0,1,0],
+   bass:['C2',null,null,null,'C2',null,'D2',null,null,null,'D#2',null,'C2',null,null,'A#2'],
+   synth:{cutoff:350,resonance:20,envMod:90,decay:250,accent:70,attack:5,release:100,subVol:30,glide:80,waveform:0}},
+  {name:'SQUARE ACID',desc:'PWM-style square wave, heavy sub',bpm:142,
+   kick:[1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0],snare:[0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0],hat:[1,0,1,1,1,0,1,0,1,0,1,1,1,0,1,0],
+   bass:['C2',null,'D#2',null,null,'C2',null,'F2',null,null,'G2',null,'D#2','C2',null,null],
+   synth:{cutoff:550,resonance:16,envMod:80,decay:100,accent:60,attack:2,release:50,subVol:30,glide:15,waveform:1}},
+  {name:'LONDON ACID',desc:'SUF-style relentless 303 workout, 145 contract BPM',bpm:145,
+   kick:[1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0],snare:[0,0,0,0,1,0,0,1,0,0,0,0,1,0,0,0],hat:[1,0,1,1,1,0,1,0,1,1,1,0,1,0,1,1],
+   bass:['C2',null,'C2','D#2',null,'C2',null,'F2','C2',null,'G2','F2','D#2',null,'C2','D#2'],
+   synth:{cutoff:450,resonance:22,envMod:85,decay:100,accent:75,attack:2,release:45,subVol:18,glide:25,waveform:0}},
+  {name:'SQUAT PARTY',desc:'Gritty broken hats, heavy 303 slides, distorted',bpm:145,
+   kick:[1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,1],snare:[0,0,0,0,1,0,0,0,0,0,1,0,1,0,0,0],hat:[1,1,0,1,1,0,1,1,0,1,1,0,1,0,1,0],
+   bass:['C2','C2',null,'D#2','C2',null,'F2',null,'G2','F2',null,'D#2',null,'C2','C2',null],
+   synth:{cutoff:350,resonance:24,envMod:90,decay:85,accent:80,attack:2,release:35,subVol:22,glide:35,waveform:0}},
+  {name:'303 DISORDER',desc:'Shredded acid line, tight loop, relentless',bpm:146,
+   kick:[1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0],snare:[0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,1],hat:[1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0],
+   bass:['C2','D#2','C2','F2','D#2','C2','G2','F2','C2','D#2','F2','G2','F2','D#2','C2','C2'],
+   synth:{cutoff:380,resonance:25,envMod:92,decay:70,accent:85,attack:1,release:30,subVol:15,glide:20,waveform:0}},
+  {name:'ACID FREIGHT',desc:'Rolling percussion, chugging bass, builds momentum',bpm:143,
+   kick:[1,0,0,0,1,0,0,0,1,0,0,0,1,0,1,0],snare:[0,0,0,0,1,0,0,1,0,0,0,1,1,0,0,0],hat:[0,1,1,0,0,1,1,0,0,1,1,0,0,1,1,1],
+   bass:['C2',null,null,'C2',null,null,'D#2',null,'F2',null,null,'D#2','C2',null,null,'G2'],
+   synth:{cutoff:500,resonance:20,envMod:78,decay:140,accent:65,attack:3,release:55,subVol:25,glide:45,waveform:0}},
+  {name:'LONDON 32',desc:'Two-bar SUF-style phrase, building second half',bpm:145,
+   kick:[1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0, 1,0,0,0,1,0,0,0,1,0,0,1,1,0,1,0],
+   snare:[0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0, 0,0,0,0,1,0,0,1,0,0,0,0,1,0,0,1],
+   hat:[1,0,1,1,1,0,1,0,1,1,1,0,1,0,1,1, 1,0,1,1,1,1,1,0,1,1,1,1,1,0,1,1],
+   bass:['C2',null,'C2','D#2',null,'C2',null,'F2','C2',null,'G2','F2','D#2',null,'C2','D#2', 'C2','D#2',null,'F2','G2',null,'F2','D#2','C2',null,'C2','D#2','F2','G2','F2','C2'],
+   synth:{cutoff:420,resonance:23,envMod:88,decay:95,accent:75,attack:2,release:40,subVol:20,glide:28,waveform:0}},
+  {name:'SQUAT 32',desc:'Two-bar gritty phrase, breakdown into drop',bpm:145,
+   kick:[1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,1, 1,0,0,0,1,0,0,0,1,0,1,0,1,0,1,0],
+   snare:[0,0,0,0,1,0,0,0,0,0,1,0,1,0,0,0, 0,0,0,0,1,0,0,0,0,0,0,0,1,0,1,1],
+   hat:[1,1,0,1,1,0,1,1,0,1,1,0,1,0,1,0, 0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1],
+   bass:['C2','C2',null,'D#2','C2',null,'F2',null,'G2','F2',null,'D#2',null,'C2','C2',null, null,null,null,null,null,null,null,null,'C2','D#2','F2','G2','F2','D#2','C2','C2'],
+   synth:{cutoff:330,resonance:25,envMod:92,decay:80,accent:82,attack:2,release:30,subVol:24,glide:30,waveform:0}},
+  {name:'DISORDER 32',desc:'Two-bar shredded acid, relentless 303',bpm:146,
+   kick:[1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0, 1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0],
+   snare:[0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,1, 0,0,0,0,1,0,0,1,0,0,0,0,1,0,0,0],
+   hat:[1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0, 1,0,1,0,1,0,1,0,1,0,1,1,1,0,1,1],
+   bass:['C2','D#2','C2','F2','D#2','C2','G2','F2','C2','D#2','F2','G2','F2','D#2','C2','C2', 'C2',null,'D#2','F2','G2','F2','D#2','C2','G2','F2','D#2','C2','D#2','F2','G2','C2'],
+   synth:{cutoff:360,resonance:26,envMod:94,decay:65,accent:88,attack:1,release:25,subVol:16,glide:18,waveform:0}},
+  {name:'FREIGHT 32',desc:'Two-bar rolling builder, second bar intensifies',bpm:143,
+   kick:[1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0, 1,0,0,0,1,0,0,0,1,0,0,0,1,0,1,0],
+   snare:[0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0, 0,0,0,0,1,0,0,1,0,0,1,0,1,0,0,1],
+   hat:[0,1,1,0,0,1,1,0,0,1,1,0,0,1,1,0, 0,1,1,0,0,1,1,1,0,1,1,1,1,1,1,1],
+   bass:['C2',null,null,'C2',null,null,'D#2',null,'F2',null,null,'D#2','C2',null,null,'G2', 'C2',null,'D#2',null,'F2','D#2','C2',null,'G2','F2','D#2','C2','D#2','F2','G2','C2'],
+   synth:{cutoff:480,resonance:21,envMod:80,decay:130,accent:68,attack:3,release:50,subVol:26,glide:40,waveform:0}},
+  {name:'QUANTUM CHAOS',desc:'Everything superposed — pure indeterminacy',bpm:155,
+   kick:[1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0],snare:[],hat:[],bass:[],
+   synth:{cutoff:600,resonance:18,envMod:70,decay:140,accent:60,attack:4,release:80,subVol:20,glide:40,waveform:0},quantumAll:true},
+];
+
+function loadTemplate(idx){
+  const t=templates[idx],p=P();
+  bpm=t.bpm;document.getElementById('bpmV').textContent=bpm;
+  fxP.delayTime=60/bpm*0.75;updateFX();
+  // If template has 32 steps, switch to 32 mode
+  const tLen=t.kick.length;
+  if(tLen>16&&numSteps===16){numSteps=32;document.getElementById('stepsV').textContent=32;decoherenceState=new Array(128).fill(0);rebuildGrid()}
+  // Pad template arrays to 32 (internal arrays are always 32)
+  function pad(arr,def){const a=[...(arr||[])];while(a.length<32)a.push(def);return a}
+  p.kick=pad(t.kick,false).map(Boolean);
+  p.snare=pad(t.snare||[],false).map(Boolean);
+  p.hat=pad(t.hat||[],false).map(Boolean);
+  p.bass=pad(t.bass||[],null);
+  p.q={kick:Array(32).fill(false),snare:Array(32).fill(false),hat:Array(32).fill(false),bass:Array(32).fill(false)};
+  p.vel={kick:Array(32).fill(100),snare:Array(32).fill(100),hat:Array(32).fill(100),bass:Array(32).fill(100)};
+  if(t.synth){Object.assign(sP,t.synth);refreshKnobs();
+    document.querySelectorAll('.wave-btn').forEach(b=>b.classList.remove('on'));
+    const wb=document.querySelector(`.wave-btn[data-wave="${sP.waveform}"]`);if(wb)wb.classList.add('on');
+  }
+  if(t.quantumFill)qFill();
+  if(t.quantumAll)superAll();
+  if(playing){curStep=-1;nextT=AC.currentTime+0.05}
+  decoherenceState.fill(0);
+  refreshUI();
+  document.getElementById('qStat').innerHTML=`Loaded <span>${t.name}</span>`;
+}
+
+// ===== BUILD UI =====
+function buildStepNums(){
+  const c=document.getElementById('stepNums');c.innerHTML='<span></span>';
+  c.style.gridTemplateColumns=`52px repeat(${numSteps},1fr)`;
+  for(let i=0;i<numSteps;i++){const s=document.createElement('span');s.className='sn'+(i%4===0?' bt':'');s.textContent=i%4===0?(i+1):'·';c.appendChild(s)}
+}
+
+function buildDG(){
+  const c=document.getElementById('drumG');c.innerHTML='';
+  const cols=`52px repeat(${numSteps},1fr)`;
+  ['kick','snare','hat'].forEach(tr=>{
+    const r=document.createElement('div');r.className='trow';r.style.gridTemplateColumns=cols;
+    const l=document.createElement('span');l.className='tlbl';l.style.color=`var(--${tr})`;
+    l.textContent=tr==='hat'?'HH':tr.toUpperCase().slice(0,2);r.appendChild(l);
+    for(let s=0;s<numSteps;s++){const el=document.createElement('div');el.className='step'+(s%4===0?' bm':'');el.dataset.t=tr;el.dataset.s=s;el.onclick=()=>togDrum(tr,s);r.appendChild(el)}
+    c.appendChild(r);
+  });
+}
+
+function buildBG(){
+  const c=document.getElementById('bassG');c.innerHTML='';
+  const r=document.createElement('div');r.className='trow';r.style.gridTemplateColumns=`52px repeat(${numSteps},1fr)`;
+  const l=document.createElement('span');l.className='tlbl';l.style.color='var(--acid)';l.textContent='ACID';r.appendChild(l);
+  for(let s=0;s<numSteps;s++){const el=document.createElement('div');el.className='step'+(s%4===0?' bm':'');el.dataset.t='bass';el.dataset.s=s;el.onclick=()=>togBass(s);r.appendChild(el)}
+  c.appendChild(r);
+}
+
+function buildNS(){
+  const c=document.getElementById('noteS');
+  NOTES.forEach(n=>{
+    const b=document.createElement('button');
+    b.className='nbtn'+(n===selNote?' on':'')+(n.includes('#')?' sharp':'');
+    b.textContent=n;
+    b.onclick=()=>{selNote=n;document.querySelectorAll('.nbtn').forEach(x=>x.classList.remove('on'));b.classList.add('on')};
+    c.appendChild(b);
+  });
+}
+
+// KNOBS
+const acidKnobDefs=[
+  {id:'cutoff',label:'Cutoff',min:60,max:5000,val:800,param:'cutoff'},
+  {id:'reso',label:'Reso',min:0,max:30,val:15,param:'resonance'},
+  {id:'envmod',label:'Env Mod',min:0,max:100,val:65,param:'envMod'},
+  {id:'attack',label:'Attack',min:1,max:200,val:5,param:'attack'},
+  {id:'decay',label:'Decay',min:10,max:500,val:150,param:'decay'},
+  {id:'release',label:'Release',min:10,max:500,val:80,param:'release'},
+  {id:'accent',label:'Accent',min:0,max:100,val:55,param:'accent'},
+  {id:'subvol',label:'Sub Vol',min:0,max:100,val:20,param:'subVol'},
+  {id:'glide',label:'Glide',min:5,max:300,val:40,param:'glide'},
+];
+
+const fxKnobDefs=[
+  {id:'fxDelay',label:'Delay',min:0,max:100,val:25,param:'delay',fx:true},
+  {id:'fxFB',label:'Feedback',min:0,max:85,val:30,param:'feedback',fx:true},
+  {id:'fxDTime',label:'D.Time',min:50,max:750,val:375,param:'delayTime',fx:true,scale:1000},
+  {id:'fxRev',label:'Reverb',min:0,max:100,val:20,param:'reverb',fx:true},
+  {id:'fxDist',label:'Distort',min:0,max:100,val:30,param:'distAmt',fx:true},
+  {id:'fxPhaser',label:'Phaser',min:0,max:100,val:0,param:'phaser',fx:true},
+  {id:'fxPhRate',label:'Ph.Rate',min:5,max:400,val:40,param:'phaserRate',fx:true,scale:100},
+];
+
+function buildKnobs(defs,containerId){
+  const c=document.getElementById(containerId);c.innerHTML='';
+  defs.forEach(d=>{
+    const grp=document.createElement('div');grp.className='kgrp'+(d.fx?' fx':'');
+    const lbl=document.createElement('span');lbl.className='klbl';lbl.textContent=d.label;
+    const slider=document.createElement('input');slider.type='range';slider.className='kslider';
+    slider.min=d.min;slider.max=d.max;slider.value=d.val;slider.dataset.id=d.id;
+    slider.setAttribute('touch-action','none');
+    const val=document.createElement('span');val.className='kval';val.id='kv_'+d.id;val.textContent=Math.round(d.val);
+    grp.append(lbl,slider,val);c.appendChild(grp);
+    function upd(v){
+      val.textContent=Math.round(v);
+      if(d.fx){fxP[d.param]=d.scale?v/d.scale:v/100;updateFX()}
+      else sP[d.param]=v;
+    }
+    slider.addEventListener('input',()=>upd(+slider.value));
+    slider._def=d;slider._setVal=nv=>{slider.value=Math.max(d.min,Math.min(d.max,nv));upd(+slider.value)};
+    upd(d.val);
+  });
+}
+
+function refreshKnobs(){
+  acidKnobDefs.forEach(d=>{
+    const el=document.querySelector(`.kslider[data-id="${d.id}"]`);
+    if(el&&el._setVal)el._setVal(sP[d.param]);
+  });
+}
+
+function buildTemplates(){
+  const c=document.getElementById('tmplG');
+  templates.forEach((t,i)=>{
+    const card=document.createElement('div');card.className='tmpl-card';card.onclick=()=>loadTemplate(i);
+    card.innerHTML=`<div class="tmpl-name">${t.name}</div><div class="tmpl-desc">${t.desc}</div><div class="tmpl-bpm">${t.bpm} BPM</div>`;
+    c.appendChild(card);
+  });
+}
+
+// PROBABILITY WEIGHT GRID
+function buildProbGrid(){
+  const c=document.getElementById('probGrid');c.innerHTML='';
+  const labels='CDEFGAB';
+  const colors=['#00e5ff','#00c8ff','#a855f7','#c855f7','#ff2d95','#ff6464','#ffc832'];
+  for(let i=0;i<7;i++){
+    const cell=document.createElement('div');cell.className='prob-cell';
+    cell.innerHTML=`<div class="fill" style="background:${colors[i]};height:${noteWeights[i]/5*100}%"></div><span class="lbl">${labels[i]}<br>${noteWeights[i]}</span>`;
+    cell.onclick=()=>{
+      noteWeights[i]=(noteWeights[i]%5)+1;
+      buildProbGrid();
+    };
+    c.appendChild(cell);
+  }
+}
+
+function setScale(name){
+  const scales={
+    minor:[5,1,3,1,4,3,1],
+    penta:[5,1,3,0,5,3,0],
+    blues:[5,1,3,1,5,0,2],
+    chromatic:[3,3,3,3,3,3,3],
+    equal:[1,1,1,1,1,1,1]
+  };
+  noteWeights=scales[name]||[1,1,1,1,1,1,1];
+  buildProbGrid();
+}
+
+// DECOHERENCE VIS
+function buildDecoVis(){
+  const c=document.getElementById('decoVis');c.innerHTML='';
+  for(let i=0;i<numSteps;i++){
+    const avg=(
+      (i<decoherenceState.length?decoherenceState[i]:0)+
+      (numSteps+i<decoherenceState.length?decoherenceState[numSteps+i]:0)+
+      (2*numSteps+i<decoherenceState.length?decoherenceState[2*numSteps+i]:0)+
+      (3*numSteps+i<decoherenceState.length?decoherenceState[3*numSteps+i]:0)
+    )/4;
+    const coherence=Math.max(0,Math.min(100,100-avg));
+    const bar=document.createElement('div');bar.className='deco-bar';bar.id='deco_'+i;
+    bar.style.height=Math.max(2,coherence)+'%';
+    bar.style.background=coherence>70?'var(--quantum)':coherence>30?'var(--decohere)':'var(--dim)';
+    bar.style.opacity=0.3+coherence/100*0.7;
+    c.appendChild(bar);
+  }
+}
+
+// ===== STEP LOGIC =====
+function togDrum(tr,s){const p=P();const ti=['kick','snare','hat'].indexOf(tr);if(qDrum){p.q[tr][s]=!p.q[tr][s];p[tr][s]=false}else{p[tr][s]=!p[tr][s];p.q[tr][s]=false}const di=ti*numSteps+s;if(di<decoherenceState.length)decoherenceState[di]=0;refreshUI()}
+function togBass(s){const p=P();if(qBass){p.q.bass[s]=!p.q.bass[s];p.bass[s]=null}else{p.bass[s]=p.bass[s]?null:selNote;p.q.bass[s]=false}const di=3*numSteps+s;if(di<decoherenceState.length)decoherenceState[di]=0;refreshUI()}
+
+function refreshUI(){
+  document.querySelectorAll('.step').forEach(el=>{
+    const tr=el.dataset.t,s=+el.dataset.s,p=P();
+    el.className='step'+(s%4===0?' bm':'');
+    el.textContent='';
+    el.style.fontSize='';
+    if(s===curStep)el.classList.add('ph');
+    if(tr==='bass'){
+      if(p.q.bass[s]){
+        const di=3*numSteps+s;
+        if(decoherenceOn&&di<decoherenceState.length&&decoherenceState[di]>=decoherenceThreshold)el.classList.add('deco');
+        else el.classList.add('q');
+      }
+      else if(p.bass[s]){el.classList.add('on-bass');el.textContent=p.bass[s];el.style.fontSize='.38rem'}
+    }else{
+      const qi=['kick','snare','hat'].indexOf(tr)*numSteps+s;
+      if(p.q[tr][s]){
+        if(decoherenceOn&&qi<decoherenceState.length&&decoherenceState[qi]>=decoherenceThreshold)el.classList.add('deco');
+        else el.classList.add('q');
+      }
+      else if(p[tr][s])el.classList.add('on-'+tr);
+    }
+  });
+  buildDecoVis();
+}
+
+function clearDrums(){const p=P();['kick','snare','hat'].forEach(t=>{p[t].fill(false);p.q[t].fill(false)});p.bass.fill(null);p.q.bass.fill(false);decoherenceState.fill(0);refreshUI()}
+
+// ===== TRANSPORT =====
+function togglePlay(){
+  if(AC.state==='suspended')AC.resume();
+  playing=!playing;
+  const b=document.getElementById('playBtn');
+  if(playing){
+    b.classList.add('on');document.getElementById('playIco').innerHTML='<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>';
+    curStep=-1;nextT=AC.currentTime+0.05;lastBassFreq=0;sched();
+    document.getElementById('waveInfo').textContent='PLAYING';
+  }else{
+    b.classList.remove('on');document.getElementById('playIco').innerHTML='<polygon points="6,3 20,12 6,21"/>';
+    clearTimeout(tmID);curStep=-1;refreshUI();
+    document.getElementById('waveInfo').textContent='IDLE';
+  }
+}
+
+let loopCount=0;
+function sched(){
+  while(nextT<AC.currentTime+0.1){
+    curStep=(curStep+1)%numSteps;
+    if(curStep===0){
+      loopCount++;
+      if(decoherenceOn)applyDecoherence();
+    }
+    schedStep(distNode,curStep,nextT);
+    const bl=60/bpm/4,sw=(curStep%2===1)?bl*(swing/100)*0.5:0;
+    nextT+=bl+sw;
+  }
+  refreshUI();tmID=setTimeout(sched,25);
+}
+
+function applyDecoherence(){
+  const p=P();
+  for(let s=0;s<numSteps;s++){
+    ['kick','snare','hat'].forEach((tr,ti)=>{
+      const di=ti*numSteps+s;
+      if(p.q[tr][s]){
+        decoherenceState[di]+=decoherenceRate*(0.5+Math.random()*0.5);
+        if(decoherenceState[di]>=100){
+          p[tr][s]=Math.random()>0.45;
+          p.q[tr][s]=false;
+          decoherenceState[di]=0;
+          decoEventCount++;
+          document.getElementById('ccDeco').textContent=decoEventCount;
+        }
+      }
+    });
+    const bdi=3*numSteps+s;
+    if(p.q.bass[s]){
+      decoherenceState[bdi]+=decoherenceRate*(0.5+Math.random()*0.5);
+      if(decoherenceState[bdi]>=100){
+        p.bass[s]=Math.random()>0.4?weightedNoteSelect(12):null;
+        p.q.bass[s]=false;
+        decoherenceState[bdi]=0;
+        decoEventCount++;
+        document.getElementById('ccDeco').textContent=decoEventCount;
+      }
+    }
+  }
+  document.getElementById('decoStat').innerHTML=`Decoherence <span style="color:var(--decohere)">active</span> — loop ${loopCount}, ${decoEventCount} collapse events`;
+}
+
+function schedStep(dest,step,t){
+  const p=P();
+  const obs=observerLevel/100;
+  const qKT=0.4-(obs*0.35),qST=0.5-(obs*0.4),qHT=0.35-(obs*0.3),qBT=0.35-(obs*0.3);
+  const obsCB=obs*2000,obsRB=obs*5;
+
+  // Check decoherence level for probability modification
+  function decoProb(di,baseThresh){
+    const dLevel=(di<decoherenceState.length?decoherenceState[di]:0)||0;
+    return baseThresh*(1-dLevel/200);
+  }
+
+  let kk=p.kick[step];
+  if(p.q.kick[step])kk=Math.random()>decoProb(step,qKT);
+  if(kk)playKick(dest,t);
+  if(entangled&&kk&&!p.bass[step]&&!p.q.bass[step])playAcid(dest,t,weightedNoteSelect(8),obsCB,obsRB);
+
+  let sn=p.snare[step];if(p.q.snare[step])sn=Math.random()>decoProb(numSteps+step,qST);
+  if(sn)playSnare(dest,t);
+
+  let hh=p.hat[step];if(p.q.hat[step])hh=Math.random()>decoProb(2*numSteps+step,qHT);
+  if(hh)playHat(dest,t);
+
+  if(p.q.bass[step]){
+    const range=Math.max(2,Math.floor(12*(1-obs*0.7)));
+    if(Math.random()>decoProb(3*numSteps+step,qBT))playAcid(dest,t,weightedNoteSelect(range),obsCB,obsRB);
+  }else if(p.bass[step])playAcid(dest,t,p.bass[step],obsCB,obsRB);
+}
+
+function chBPM(d){bpm=Math.max(60,Math.min(200,bpm+d));document.getElementById('bpmV').textContent=bpm;fxP.delayTime=60/bpm*0.75;updateFX()}
+
+let tapTimes=[];
+function tapTempo(){
+  const now=performance.now();
+  tapTimes.push(now);
+  // Keep last 6 taps
+  if(tapTimes.length>6)tapTimes.shift();
+  // Reset if gap > 2 seconds
+  if(tapTimes.length>=2&&now-tapTimes[tapTimes.length-2]>2000){tapTimes=[now];return}
+  if(tapTimes.length>=2){
+    let sum=0;
+    for(let i=1;i<tapTimes.length;i++)sum+=tapTimes[i]-tapTimes[i-1];
+    const avg=sum/(tapTimes.length-1);
+    const newBPM=Math.round(60000/avg);
+    if(newBPM>=60&&newBPM<=200){bpm=newBPM;document.getElementById('bpmV').textContent=bpm;fxP.delayTime=60/bpm*0.75;updateFX()}
+  }
+}
+function chPat(d){curPat=(curPat+d+4)%4;document.getElementById('patV').textContent=curPat+1;refreshUI()}
+
+// ===== QUANTUM =====
+function superAll(){const p=P();for(let s=0;s<numSteps;s++){['kick','snare','hat'].forEach(t=>{p.q[t][s]=true;p[t][s]=false});p.q.bass[s]=true;p.bass[s]=null}decoherenceState.fill(0);refreshUI();document.getElementById('qStat').innerHTML=`All ${numSteps*4} steps in <span>superposition</span> — every loop unique`}
+function collapseAll(){const p=P();for(let s=0;s<numSteps;s++){['kick','snare','hat'].forEach(t=>{if(p.q[t][s]){p[t][s]=Math.random()>0.45;p.q[t][s]=false}});if(p.q.bass[s]){p.bass[s]=Math.random()>0.4?weightedNoteSelect(12):null;p.q.bass[s]=false}}decoherenceState.fill(0);refreshUI();logCollapse();document.getElementById('qStat').innerHTML='Wave function <span>collapsed</span> — this pattern will never exist again'}
+function qFill(){const p=P();for(let s=0;s<numSteps;s++){['kick','snare','hat'].forEach(t=>{if(!p[t][s]&&Math.random()>0.5)p.q[t][s]=true});if(!p.bass[s]&&Math.random()>0.5)p.q.bass[s]=true}refreshUI();document.getElementById('qStat').innerHTML='Empty steps filled with <span>quantum uncertainty</span>'}
+function entKB(){entangled=!entangled;document.getElementById('qStat').innerHTML=entangled?'Kick↔Bass <span>entangled</span>':'Entanglement broken'}
+
+function randomize(){
+  const p=P();
+  for(let s=0;s<numSteps;s++){
+    p.kick[s]=s%4===0||Math.random()>0.7;p.snare[s]=s%8===4||Math.random()>0.85;
+    p.hat[s]=Math.random()>0.35;p.bass[s]=Math.random()>0.45?weightedNoteSelect(10):null;
+    p.q.kick[s]=false;p.q.snare[s]=false;p.q.hat[s]=false;p.q.bass[s]=false;
+  }
+  refreshUI();document.getElementById('qStat').innerHTML='Pattern <span>randomized</span> using weighted probability';
+}
+
+function mutate(){
+  const p=P();
+  for(let s=0;s<numSteps;s++){
+    if(Math.random()>0.75)p.kick[s]=!p.kick[s];
+    if(Math.random()>0.8)p.snare[s]=!p.snare[s];
+    if(Math.random()>0.7)p.hat[s]=!p.hat[s];
+    if(Math.random()>0.7){
+      if(p.bass[s])p.bass[s]=Math.random()>0.5?NOTES[(NOTES.indexOf(p.bass[s])+Math.floor(Math.random()*5)-2+NOTES.length)%NOTES.length]:null;
+      else if(Math.random()>0.6)p.bass[s]=weightedNoteSelect(10);
+    }
+  }
+  refreshUI();document.getElementById('qStat').innerHTML='Pattern <span>mutated</span> — subtle variations applied';
+}
+
+// ===== EXPORT =====
+async function exportWAV(bars){
+  const prog=document.getElementById('xProg');prog.style.display='block';prog.textContent='Rendering '+bars+' bars...';
+  const offAC=new OfflineAudioContext(2,AC.sampleRate*(60/bpm*4*bars),AC.sampleRate);
+  const offGain=offAC.createGain();offGain.gain.value=0.85;
+  const offDist=offAC.createWaveShaper();offDist.curve=mkDist(fxP.distAmt/10);offDist.oversample='4x';
+  const offDelay=offAC.createDelay(1.0);offDelay.delayTime.value=fxP.delayTime;
+  const offDelFB=offAC.createGain();offDelFB.gain.value=Math.min(fxP.feedback,0.85);
+  const offDelMix=offAC.createGain();offDelMix.gain.value=fxP.delay;
+  const offDry=offAC.createGain();offDry.gain.value=1;
+  const offRev=offAC.createConvolver();offRev.buffer=buildReverbOff(offAC,1.5,2);
+  const offRevG=offAC.createGain();offRevG.gain.value=fxP.reverb;
+  offDist.connect(offDry);offDist.connect(offDelay);
+  offDelay.connect(offDelFB);offDelFB.connect(offDelay);offDelay.connect(offDelMix);
+  offDist.connect(offRev);offRev.connect(offRevG);
+  offDry.connect(offGain);offDelMix.connect(offGain);offRevG.connect(offGain);
+  offGain.connect(offAC.destination);
+  const totalSteps=numSteps*bars,p=P();
+  for(let i=0;i<totalSteps;i++){
+    const s=i%numSteps;let actualT=0;
+    for(let j=0;j<i;j++){const js=j%numSteps;const jbl=60/bpm/4;const jsw=(js%2===1)?jbl*(swing/100)*0.5:0;actualT+=jbl+jsw}
+    let kk=p.kick[s];if(p.q.kick[s])kk=Math.random()>0.4;
+    if(kk)playKickOff(offAC,offDist,actualT);
+    let sn=p.snare[s];if(p.q.snare[s])sn=Math.random()>0.5;
+    if(sn)playSnareOff(offAC,offDist,actualT);
+    let hh=p.hat[s];if(p.q.hat[s])hh=Math.random()>0.35;
+    if(hh)playHatOff(offAC,offDist,actualT);
+    if(p.q.bass[s]){if(Math.random()>0.35)playAcidOff(offAC,offDist,actualT,weightedNoteSelect(12))}
+    else if(p.bass[s])playAcidOff(offAC,offDist,actualT,p.bass[s]);
+    if(entangled&&kk&&!p.bass[s]&&!p.q.bass[s])playAcidOff(offAC,offDist,actualT,weightedNoteSelect(8));
+  }
+  try{
+    const rendered=await offAC.startRendering();
+    const wav=bufToWav(rendered);
+    const blob=new Blob([wav],{type:'audio/wav'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');a.href=url;a.download=`q-acid-303_${bpm}bpm_${bars}bars_${Date.now()}.wav`;
+    document.body.appendChild(a);a.click();document.body.removeChild(a);
+    setTimeout(()=>URL.revokeObjectURL(url),5000);
+    prog.textContent='Exported! Each export is a unique quantum collapse.';
+    setTimeout(()=>prog.style.display='none',3000);
+  }catch(e){prog.textContent='Export error: '+e.message}
+}
+
+function buildReverbOff(ctx,dur,decay){const len=ctx.sampleRate*dur,buf=ctx.createBuffer(2,len,ctx.sampleRate);for(let ch=0;ch<2;ch++){const d=buf.getChannelData(ch);for(let i=0;i<len;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/len,decay)}return buf}
+
+function playKickOff(ctx,dest,t){
+  const o=ctx.createOscillator(),g=ctx.createGain();o.type='sine';o.frequency.setValueAtTime(170,t);o.frequency.exponentialRampToValueAtTime(35,t+0.14);g.gain.setValueAtTime(0.9,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.45);o.connect(g);g.connect(dest);o.start(t);o.stop(t+0.45);
+  const o2=ctx.createOscillator(),g2=ctx.createGain();o2.type='square';o2.frequency.setValueAtTime(440,t);o2.frequency.exponentialRampToValueAtTime(50,t+0.015);g2.gain.setValueAtTime(0.35,t);g2.gain.exponentialRampToValueAtTime(0.001,t+0.03);o2.connect(g2);g2.connect(dest);o2.start(t);o2.stop(t+0.04);
+}
+function playSnareOff(ctx,dest,t){
+  const bsz=ctx.sampleRate*0.14,buf=ctx.createBuffer(1,bsz,ctx.sampleRate),d=buf.getChannelData(0);for(let i=0;i<bsz;i++)d[i]=Math.random()*2-1;
+  const n=ctx.createBufferSource();n.buffer=buf;const ng=ctx.createGain(),hp=ctx.createBiquadFilter();hp.type='highpass';hp.frequency.value=2500;ng.gain.setValueAtTime(0.45,t);ng.gain.exponentialRampToValueAtTime(0.001,t+0.14);n.connect(hp);hp.connect(ng);ng.connect(dest);n.start(t);n.stop(t+0.14);
+  const o=ctx.createOscillator(),g=ctx.createGain();o.type='triangle';o.frequency.setValueAtTime(220,t);o.frequency.exponentialRampToValueAtTime(80,t+0.04);g.gain.setValueAtTime(0.35,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.08);o.connect(g);g.connect(dest);o.start(t);o.stop(t+0.08);
+}
+function playHatOff(ctx,dest,t){
+  const dur=0.05,bsz=ctx.sampleRate*dur,buf=ctx.createBuffer(1,bsz,ctx.sampleRate),d=buf.getChannelData(0);for(let i=0;i<bsz;i++)d[i]=Math.random()*2-1;
+  const s=ctx.createBufferSource();s.buffer=buf;const g=ctx.createGain(),hp=ctx.createBiquadFilter();hp.type='highpass';hp.frequency.value=7500;g.gain.setValueAtTime(0.22,t);g.gain.exponentialRampToValueAtTime(0.001,t+dur);s.connect(hp);hp.connect(g);g.connect(dest);s.start(t);s.stop(t+dur);
+}
+function playAcidOff(ctx,dest,t,note){
+  const freq=NF[note]||130.81;const{cutoff,resonance,envMod,decay,accent,attack,release,subVol,waveform}=sP;
+  const waveTypes=['sawtooth','square','triangle','sine'];
+  const o=ctx.createOscillator();o.type=waveTypes[waveform]||'sawtooth';o.frequency.setValueAtTime(freq,t);
+  const sub=ctx.createOscillator();sub.type='sine';sub.frequency.setValueAtTime(freq/2,t);
+  const subG=ctx.createGain();subG.gain.value=subVol/100*0.25;sub.connect(subG);
+  const f=ctx.createBiquadFilter();f.type='lowpass';f.Q.value=resonance;
+  const envA=cutoff+(envMod/100)*4500*(1+accent/150);const atkTime=Math.max(attack/1000,0.002);
+  f.frequency.setValueAtTime(cutoff,t);f.frequency.linearRampToValueAtTime(Math.min(envA,15000),t+atkTime);f.frequency.exponentialRampToValueAtTime(Math.max(cutoff,20),t+atkTime+decay/1000);
+  const g=ctx.createGain();const vol=0.22+(accent/100)*0.15;const relTime=release/1000;
+  g.gain.setValueAtTime(0.001,t);g.gain.linearRampToValueAtTime(vol,t+atkTime);g.gain.setValueAtTime(vol*0.8,t+atkTime+0.01);g.gain.exponentialRampToValueAtTime(0.001,t+atkTime+decay/1000+relTime);
+  const totalDur=atkTime+decay/1000+relTime+0.05;
+  o.connect(f);subG.connect(f);f.connect(g);g.connect(dest);o.start(t);o.stop(t+totalDur);sub.start(t);sub.stop(t+totalDur);
+}
+
+function bufToWav(buf){
+  const nc=buf.numberOfChannels,sr=buf.sampleRate,len=buf.length;
+  const out=new ArrayBuffer(44+len*nc*2),v=new DataView(out);
+  function ws(o,s){for(let i=0;i<s.length;i++)v.setUint8(o+i,s.charCodeAt(i))}
+  ws(0,'RIFF');v.setUint32(4,36+len*nc*2,true);ws(8,'WAVE');ws(12,'fmt ');v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,nc,true);v.setUint32(24,sr,true);v.setUint32(28,sr*nc*2,true);v.setUint16(32,nc*2,true);v.setUint16(34,16,true);ws(36,'data');v.setUint32(40,len*nc*2,true);
+  let off=44;for(let i=0;i<len;i++){for(let ch=0;ch<nc;ch++){let s=buf.getChannelData(ch)[i];s=Math.max(-1,Math.min(1,s));v.setInt16(off,s<0?s*0x8000:s*0x7FFF,true);off+=2}}
+  return out;
+}
+
+// ===== WAVEFORM VIS =====
+const wvC=document.getElementById('wvC'),wCtx=wvC.getContext('2d');
+let ph=0;
+function drawW(){
+  wvC.width=wvC.offsetWidth*2;wvC.height=wvC.offsetHeight*2;
+  const w=wvC.width,h=wvC.height;wCtx.clearRect(0,0,w,h);
+  wCtx.strokeStyle='#1a1a2a';wCtx.lineWidth=1;
+  for(let y=0;y<h;y+=16){wCtx.beginPath();wCtx.moveTo(0,y);wCtx.lineTo(w,y);wCtx.stroke()}
+  const cols=['#39ff14','#ff3c00','#00d4ff','#bf00ff'];
+  const hasQ=P().q.kick.some(Boolean)||P().q.bass.some(Boolean);
+  for(let l=0;l<(hasQ?4:2);l++){
+    wCtx.beginPath();
+    const freq=0.005+l*0.004+(playing?Math.sin(ph*0.5)*0.002:0);
+    const amp=h*(0.12+(playing?0.12:0))/(1+l*0.3);
+    for(let x=0;x<w;x++){const y=h/2+Math.sin(x*freq+ph+l*1.5)*amp*Math.cos(x*0.001+ph*0.3);x===0?wCtx.moveTo(x,y):wCtx.lineTo(x,y)}
+    wCtx.strokeStyle=cols[l]+(hasQ?'45':'20');wCtx.lineWidth=playing?1.5:1;wCtx.stroke();
+  }
+  ph+=playing?0.06:0.02;requestAnimationFrame(drawW);
+}
+
+// ===== SCIENCE SECTIONS =====
+const wfCanvas=document.getElementById('wfCanvas'),wfCtx=wfCanvas.getContext('2d');
+let wfPh=0,wfMode='superposition';
+const sciNotes=['C','D','E','F','G','A','B'];
+const sciColors={'C':'#00e5ff','D':'#00c8ff','E':'#a855f7','F':'#c855f7','G':'#ff2d95','A':'#ff6464','B':'#ffc832'};
+const sciFreqs={C:261.63,D:293.66,E:329.63,F:349.23,G:392,A:440,B:493.88};
+
+function drawWF(){
+  wfCanvas.width=wfCanvas.offsetWidth*2;wfCanvas.height=wfCanvas.offsetHeight*2;
+  const w=wfCanvas.width,h=wfCanvas.height;
+  wfCtx.clearRect(0,0,w,h);
+  wfCtx.strokeStyle='#151520';wfCtx.lineWidth=1;
+  for(let y=0;y<h;y+=20){wfCtx.beginPath();wfCtx.moveTo(0,y);wfCtx.lineTo(w,y);wfCtx.stroke()}
+  wfCtx.strokeStyle='#222240';wfCtx.beginPath();wfCtx.moveTo(0,h/2);wfCtx.lineTo(w,h/2);wfCtx.stroke();
+
+  const pa=playing?1.5:1;
+
+  if(wfMode==='superposition'){
+    for(let l=0;l<7;l++){
+      wfCtx.beginPath();const freq=0.005+l*0.005;const amp=h*0.12*pa/(1+l*0.15);
+      // Weight the amplitude by probability weights
+      const wAmp=amp*(noteWeights[l]/3);
+      for(let x=0;x<w;x++){const y=h/2+Math.sin(x*freq+wfPh+l*0.9)*wAmp*Math.cos(x*0.002+wfPh*0.4+l);x===0?wfCtx.moveTo(x,y):wfCtx.lineTo(x,y)}
+      const col=Object.values(sciColors)[l];
+      wfCtx.strokeStyle=col+(playing?'50':'35');wfCtx.lineWidth=playing?2:1.5;wfCtx.stroke();
+    }
+    wfCtx.beginPath();
+    for(let x=0;x<w;x++){let y=h/2;for(let l=0;l<7;l++)y+=Math.sin(x*(0.005+l*0.005)+wfPh+l*0.9)*(h*0.04*pa*noteWeights[l]/3)/(1+l*0.2);x===0?wfCtx.moveTo(x,y):wfCtx.lineTo(x,y)}
+    wfCtx.strokeStyle=playing?'#ffffff50':'#ffffff30';wfCtx.lineWidth=2;wfCtx.stroke();
+  }else if(wfMode==='collapsed'){
+    wfCtx.beginPath();
+    for(let x=0;x<w;x++){const y=h/2+Math.sin(x*0.02+wfPh)*h*0.3*pa;x===0?wfCtx.moveTo(x,y):wfCtx.lineTo(x,y)}
+    wfCtx.strokeStyle=playing?'#00e5ffb0':'#00e5ff80';wfCtx.lineWidth=playing?3:2.5;wfCtx.stroke();
+    wfCtx.strokeStyle='#00e5ff15';wfCtx.lineWidth=8;wfCtx.stroke();
+  }else if(wfMode==='interference'){
+    const f1=0.015,f2=0.018;
+    wfCtx.beginPath();for(let x=0;x<w;x++){const y=h/2+Math.sin(x*f1+wfPh)*h*0.2*pa;x===0?wfCtx.moveTo(x,y):wfCtx.lineTo(x,y)}
+    wfCtx.strokeStyle=playing?'#00e5ff50':'#00e5ff30';wfCtx.lineWidth=playing?1.5:1;wfCtx.stroke();
+    wfCtx.beginPath();for(let x=0;x<w;x++){const y=h/2+Math.sin(x*f2+wfPh*1.1)*h*0.2*pa;x===0?wfCtx.moveTo(x,y):wfCtx.lineTo(x,y)}
+    wfCtx.strokeStyle=playing?'#bf00ff50':'#bf00ff30';wfCtx.lineWidth=playing?1.5:1;wfCtx.stroke();
+    wfCtx.beginPath();for(let x=0;x<w;x++){const y=h/2+(Math.sin(x*f1+wfPh)+Math.sin(x*f2+wfPh*1.1))*h*0.15*pa;x===0?wfCtx.moveTo(x,y):wfCtx.lineTo(x,y)}
+    wfCtx.strokeStyle=playing?'#ffffff70':'#ffffff50';wfCtx.lineWidth=2;wfCtx.stroke();
+  }else if(wfMode==='decoherence'){
+    // Show gradual transition from many waves to fewer
+    const activeQ=P().q.kick.filter(Boolean).length+P().q.bass.filter(Boolean).length;
+    const decoLevel=decoherenceOn?decoherenceState.reduce((s,v)=>s+v,0)/(numSteps*4)/100:0;
+    const nWaves=Math.max(1,Math.round(7*(1-decoLevel)));
+    for(let l=0;l<nWaves;l++){
+      wfCtx.beginPath();const freq=0.005+l*0.005;const amp=h*0.12*pa/(1+l*0.15);
+      for(let x=0;x<w;x++){const y=h/2+Math.sin(x*freq+wfPh+l*0.9)*amp*Math.cos(x*0.002+wfPh*0.4+l);x===0?wfCtx.moveTo(x,y):wfCtx.lineTo(x,y)}
+      const alpha=Math.round((1-decoLevel)*80+20);
+      wfCtx.strokeStyle=`rgba(255,45,149,${alpha/255})`;wfCtx.lineWidth=2;wfCtx.stroke();
+    }
+    // Overlay the "emerging" collapsed wave
+    if(decoLevel>0.1){
+      wfCtx.beginPath();
+      for(let x=0;x<w;x++){const y=h/2+Math.sin(x*0.02+wfPh)*h*0.3*pa*decoLevel;x===0?wfCtx.moveTo(x,y):wfCtx.lineTo(x,y)}
+      wfCtx.strokeStyle=`rgba(0,229,255,${decoLevel*0.8})`;wfCtx.lineWidth=2.5;wfCtx.stroke();
+    }
+  }
+
+  wfPh+=playing?(bpm/145)*0.06:0.02;requestAnimationFrame(drawWF);
+}
+
+// ENTANGLED PAIR
+const ENT_MAP={C:'G',D:'A',E:'B',F:'C',G:'D',A:'E',B:'F'};
+let entState='super';
+function collapseEnt(which){
+  if(entState==='collapsed')return;
+  if(AC.state==='suspended')AC.resume();entState='collapsed';
+  const nA=sciNotes[Math.floor(Math.random()*7)],nB=ENT_MAP[nA];
+  const elA=document.getElementById('entA'),elB=document.getElementById('entB');
+  const first=which==='A'?elA:elB,second=which==='A'?elB:elA;
+  const fn=which==='A'?nA:nB,sn2=which==='A'?nB:nA;
+  first.classList.add('lit');
+  document.getElementById(which==='A'?'entNA':'entNB').textContent=fn;
+  document.getElementById(which==='A'?'entNA':'entNB').style.color=sciColors[fn];
+  const o=AC.createOscillator(),g=AC.createGain();o.type='sine';o.frequency.value=sciFreqs[fn];
+  g.gain.setValueAtTime(0.12,AC.currentTime);g.gain.exponentialRampToValueAtTime(0.001,AC.currentTime+0.4);
+  o.connect(g);g.connect(mGain);o.start();o.stop(AC.currentTime+0.4);
+  setTimeout(()=>{
+    second.classList.add('lit','partner');
+    document.getElementById(which==='A'?'entNB':'entNA').textContent=sn2;
+    document.getElementById(which==='A'?'entNB':'entNA').style.color=sciColors[sn2];
+    const o2=AC.createOscillator(),g2=AC.createGain();o2.type='sine';o2.frequency.value=sciFreqs[sn2];
+    g2.gain.setValueAtTime(0.12,AC.currentTime);g2.gain.exponentialRampToValueAtTime(0.001,AC.currentTime+0.4);
+    o2.connect(g2);g2.connect(mGain);o2.start();o2.stop(AC.currentTime+0.4);
+  },300);
+  document.getElementById('entStat').innerHTML=`Pair collapsed: <span style="color:${sciColors[nA]}">${nA}</span> ↔ <span style="color:${sciColors[nB]}">${nB}</span> — always a perfect fifth apart`;
+}
+function reEntangle(){
+  entState='super';
+  document.getElementById('entA').className='ent-node';document.getElementById('entB').className='ent-node';
+  ['entNA','entNB'].forEach(id=>{const el=document.getElementById(id);el.textContent='|ψ⟩';el.style.color='var(--dim)'});
+  document.getElementById('entStat').textContent='Both instruments in superposition — click one to collapse the pair';
+}
+
+// OBSERVER EFFECT
+function buildProbBars(){
+  const c=document.getElementById('probBars');c.innerHTML='';
+  sciNotes.forEach(n=>{const bar=document.createElement('div');bar.className='prob-bar';bar.style.background=sciColors[n];bar.style.height=`${100/7}%`;bar.style.opacity='0.5';const lbl=document.createElement('span');lbl.className='plb';lbl.textContent=n;bar.appendChild(lbl);c.appendChild(bar)});
+}
+function updateObserver(){
+  const val=+document.getElementById('obsSlider').value;observerLevel=val;
+  document.getElementById('obsVal').textContent=val+'%';
+  const bars=document.querySelectorAll('.prob-bar');
+  if(val<20){wfMode='superposition';document.getElementById('wfLabel').textContent='Superposition'}
+  else if(val<80){wfMode='interference';document.getElementById('wfLabel').textContent='Interference'}
+  else{wfMode='collapsed';document.getElementById('wfLabel').textContent='Collapsed'}
+  if(val<10){bars.forEach(b=>{b.style.height=`${100/7}%`;b.style.opacity='0.5'});document.getElementById('obsStat').textContent=`${val}% observation — full superposition, maximum uncertainty`}
+  else if(val<90){const dom=Math.floor((val/100)*7)%7;bars.forEach((b,i)=>{const h2=i===dom?30+val*0.5:Math.max(5,(100-val)/6);b.style.height=h2+'%';b.style.opacity=i===dom?'1':'0.3'});document.getElementById('obsStat').innerHTML=`${val}% observation — probability concentrating on <span style="color:${sciColors[sciNotes[dom]]}">${sciNotes[dom]}</span> · live-modulating synth`}
+  else{const dom=Math.floor(Math.random()*7);bars.forEach((b,i)=>{b.style.height=i===dom?'95%':'2%';b.style.opacity=i===dom?'1':'0.12'});document.getElementById('obsStat').innerHTML=`${val}% observation — collapsed to <span style="color:${sciColors[sciNotes[dom]]}">${sciNotes[dom]}</span> · deterministic`;
+    if(AC.state!=='suspended'){const o=AC.createOscillator(),g=AC.createGain();o.type='sine';o.frequency.value=sciFreqs[sciNotes[dom]];g.gain.setValueAtTime(0.08,AC.currentTime);g.gain.exponentialRampToValueAtTime(0.001,AC.currentTime+0.25);o.connect(g);g.connect(mGain);o.start();o.stop(AC.currentTime+0.25)}
+  }
+}
+
+// STATISTICS
+let collapseCount=0,uniquePatterns=new Set(),collapseLog=[];
+function logCollapse(){
+  collapseCount++;const p=P();const hash=JSON.stringify([p.kick,p.snare,p.hat,p.bass]);uniquePatterns.add(hash);
+  const notes=p.bass.filter(Boolean);notes.forEach(n=>collapseLog.push(n));
+  const freq={};collapseLog.forEach(n=>{freq[n]=(freq[n]||0)+1});
+  const total=collapseLog.length;let entropy=0;
+  if(total>0){Object.values(freq).forEach(f=>{const p2=f/total;if(p2>0)entropy-=p2*Math.log2(p2)})}
+  document.getElementById('ccTotal').textContent=collapseCount;
+  document.getElementById('ccUnique').textContent=uniquePatterns.size;
+  document.getElementById('ccEntropy').textContent=entropy.toFixed(2);
+  document.getElementById('ccProb').textContent=collapseCount>1?'≈10⁻²⁸':'—';
+}
+
+// ===== TAB SYSTEM =====
+function switchTab(tab){
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
+  document.querySelector(`.tab-btn[onclick*="${tab}"]`).classList.add('active');
+  document.getElementById('tab-'+tab).classList.add('active');
+  // Scroll to top of content
+  window.scrollTo({top:0});
+}
+
+// ===== INIT =====
+buildStepNums();buildDG();buildBG();buildNS();
+buildKnobs(acidKnobDefs,'acidKnobs');buildKnobs(fxKnobDefs,'fxKnobs');
+buildTemplates();buildProbBars();buildProbGrid();buildDecoVis();
+loadTemplate(0);drawW();drawWF();
+
+// Keyboard shortcuts
+document.addEventListener('keydown',e=>{
+  if(e.target.tagName==='INPUT')return;
+  if(e.code==='Space'){e.preventDefault();togglePlay()}
+  else if(e.key==='t'||e.key==='T')tapTempo();
+  else if(e.key==='ArrowUp'){e.preventDefault();chBPM(1)}
+  else if(e.key==='ArrowDown'){e.preventDefault();chBPM(-1)}
+  else if(e.key==='ArrowRight'){e.preventDefault();chPat(1)}
+  else if(e.key==='ArrowLeft'){e.preventDefault();chPat(-1)}
+});
+</script>
+</body>
+</html>

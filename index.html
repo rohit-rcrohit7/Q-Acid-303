@@ -2,8 +2,18 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Q-ACID 303 — Quantum Acid Machine</title>
+<meta name="description" content="Quantum acid machine — drum sequencer, 303 bass synth, and quantum physics in one instrument. Non-deterministic music that never repeats.">
+<meta name="theme-color" content="#0a0a0e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Q-ACID 303">
+<link rel="manifest" href="data:application/json;base64,eyJuYW1lIjoiUS1BQ0lEIDMwMyIsInNob3J0X25hbWUiOiJRLUFDSUQiLCJkZXNjcmlwdGlvbiI6IlF1YW50dW0gYWNpZCBtYWNoaW5lIiwic3RhcnRfdXJsIjoiLiIsImRpc3BsYXkiOiJzdGFuZGFsb25lIiwiYmFja2dyb3VuZF9jb2xvciI6IiMwYTBhMGUiLCJ0aGVtZV9jb2xvciI6IiMwYTBhMGUiLCJpY29ucyI6W119">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='16' fill='%230a0a0e'/><text x='50' y='62' text-anchor='middle' font-family='sans-serif' font-weight='900' font-size='36' fill='%2339ff14'>Q</text><text x='50' y='85' text-anchor='middle' font-family='sans-serif' font-weight='700' font-size='16' fill='%23bf00ff'>303</text></svg>">
+<meta property="og:title" content="Q-ACID 303 — Quantum Acid Machine">
+<meta property="og:description" content="Non-deterministic acid machine powered by quantum mechanics. Every loop is unique.">
+<meta property="og:type" content="website">
 <style>
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700;800&family=Bebas+Neue&family=IBM+Plex+Mono:wght@400;600&family=Oswald:wght@400;500;700&display=swap');
 
@@ -1612,6 +1622,13 @@ document.addEventListener('keydown',e=>{
   else if(e.key==='ArrowRight'){e.preventDefault();chPat(1)}
   else if(e.key==='ArrowLeft'){e.preventDefault();chPat(-1)}
 });
+
+// PWA Service Worker — enables offline use and "Add to Home Screen"
+if('serviceWorker' in navigator){
+  const swCode=`self.addEventListener('fetch',e=>e.respondWith(fetch(e.request).catch(()=>caches.match(e.request))));self.addEventListener('install',e=>e.waitUntil(caches.open('qacid-v1').then(c=>c.add('.'))));`;
+  const swBlob=new Blob([swCode],{type:'application/javascript'});
+  navigator.serviceWorker.register(URL.createObjectURL(swBlob)).catch(()=>{});
+}
 </script>
 </body>
 </html>

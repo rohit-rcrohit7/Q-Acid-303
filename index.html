@@ -24,7 +24,7 @@
   --silver:#c0c0cc;--silver-dim:#8888a0;--silver-dark:#555568;
   --border:#2a2a40;--border-hi:#3a3a55;--border-lo:#1a1a30;
   --acid:#39ff14;--acid-dim:#1a7a0a;--acid-glow:rgba(57,255,20,0.12);--acid-mid:#2acc10;
-  --kick:#ff3c00;--snare:#ffd500;--hat:#00d4ff;--bass:#39ff14;
+  --kick:#ff3c00;--snare:#ffd500;--clap:#ff6b9d;--hat:#00d4ff;--openhat:#00ffff;--ride:#ffa500;--perc:#ff8844;--bass:#39ff14;
   --quantum:#bf00ff;--qglow:rgba(191,0,255,0.15);--qmid:#9500cc;
   --fx:#ff6b2b;--fx-dim:#994020;
   --decohere:#ff2d95;--decohere-glow:rgba(255,45,149,0.12);
@@ -123,8 +123,21 @@ input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none;width:1rem;hei
 .step.bm{border-color:var(--border)}
 .step.on-kick{background:var(--kick);border-color:var(--kick);box-shadow:0 0 6px rgba(255,60,0,0.3)}
 .step.on-snare{background:var(--snare);border-color:var(--snare);box-shadow:0 0 6px rgba(255,213,0,0.3)}
+.step.on-clap{background:var(--clap);border-color:var(--clap);box-shadow:0 0 6px rgba(255,107,157,0.3)}
 .step.on-hat{background:var(--hat);border-color:var(--hat);box-shadow:0 0 6px rgba(0,212,255,0.3)}
+.step.on-openhat{background:var(--openhat);border-color:var(--openhat);box-shadow:0 0 6px rgba(0,255,255,0.3)}
+.step.on-ride{background:var(--ride);border-color:var(--ride);box-shadow:0 0 6px rgba(255,165,0,0.3)}
+.step.on-perc{background:var(--perc);border-color:var(--perc);box-shadow:0 0 6px rgba(255,136,68,0.3)}
 .step.on-bass{background:var(--bass);border-color:var(--bass);box-shadow:0 0 6px rgba(57,255,20,0.3)}
+
+/* Add-track row — appears below visible drum rows with buttons for hidden tracks */
+.add-track-row{display:flex;flex-wrap:wrap;gap:4px;align-items:center;padding:0.35rem 0 0.1rem;margin-top:0.3rem;border-top:1px dashed var(--border)}
+.add-track-lbl{font-family:'Oswald',sans-serif;font-size:0.5rem;letter-spacing:0.15em;color:var(--silver-dark);text-transform:uppercase;margin-right:0.3rem}
+.add-track-btn{font-family:'JetBrains Mono',monospace;font-size:0.48rem;font-weight:700;letter-spacing:0.08em;padding:0.2rem 0.45rem;border:1px solid var(--border);border-radius:2px;background:transparent;color:var(--silver-dim);cursor:pointer;transition:all .15s}
+.add-track-btn:hover{background:rgba(255,255,255,0.04);transform:translateY(-1px)}
+.ms-btn.x-btn{color:var(--silver-dark);font-weight:700}
+.ms-btn.x-btn:hover{color:var(--decohere);border-color:var(--decohere)}
+.tlbl .tname{font-weight:600;letter-spacing:0.12em}
 .step.q{background:linear-gradient(135deg,rgba(191,0,255,0.2),rgba(57,255,20,0.08));border-color:var(--quantum);animation:qp 1.2s ease-in-out infinite alternate;box-shadow:0 0 4px var(--qglow)}
 .step.q::after{content:'|ψ⟩';font-size:0.35rem;color:var(--quantum)}
 .step.deco{background:linear-gradient(135deg,rgba(255,45,149,0.15),rgba(191,0,255,0.08));border-color:var(--decohere);animation:decopulse 0.8s ease-in-out infinite alternate}
@@ -204,6 +217,7 @@ input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none;width:1rem;hei
 .qbtn{font-family:'JetBrains Mono',monospace;font-size:0.45rem;letter-spacing:0.06em;text-transform:uppercase;padding:0.4rem 0.8rem;border:1px solid var(--quantum);border-radius:3px;background:transparent;color:var(--quantum);cursor:pointer;transition:all .2s}
 .qbtn:hover{background:var(--qglow);box-shadow:0 0 10px var(--qglow)}
 .qbtn.pri{background:var(--quantum);color:#000;font-weight:700}
+.qbtn.on{background:var(--quantum);color:#000;font-weight:700;box-shadow:0 0 12px var(--qglow)}
 
 .qstat{font-size:0.5rem;color:var(--dim);margin-top:0.5rem}
 .qstat span{color:var(--quantum)}
@@ -418,14 +432,20 @@ input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none;width:1rem;hei
 <!-- QUANTUM ENGINE -->
 <div class="panel q-border">
   <div class="stitle"><span class="l" style="color:var(--quantum)"><span class="dot" style="background:var(--quantum);box-shadow:0 0 6px var(--quantum)"></span>QUANTUM ENGINE</span></div>
-  <p class="info">Superposed steps collapse differently every loop. The pattern never repeats identically.</p>
+  <p class="info">Superposed steps collapse differently every loop. The pattern never repeats identically. Advanced gates apply real quantum operations to the pattern state.</p>
   <div class="qctrls">
-    <button class="qbtn pri" onclick="superAll()">Superpose All</button>
-    <button class="qbtn" onclick="collapseAll()">⟨ψ| Collapse</button>
-    <button class="qbtn" onclick="qFill()">Q-Fill</button>
-    <button class="qbtn" onclick="entKB()">Entangle Kick↔Bass</button>
-    <button class="qbtn" onclick="randomize()">Randomize</button>
-    <button class="qbtn" onclick="mutate()">Mutate</button>
+    <button class="qbtn pri" onclick="superAll()" title="Put every step into equal superposition">Superpose All</button>
+    <button class="qbtn" onclick="collapseAll()" title="Force quantum states to resolve">⟨ψ| Collapse</button>
+    <button class="qbtn" onclick="qFill()" title="Add quantum states to empty steps only">Q-Fill</button>
+    <button class="qbtn" onclick="entKB()" title="Bell state |Φ+⟩ entanglement between kick and bass">Entangle Kick↔Bass</button>
+    <button class="qbtn" onclick="randomize()" title="Fresh pattern using probability weights">Randomize</button>
+    <button class="qbtn" onclick="mutate()" title="Small random variations to existing pattern">Mutate</button>
+  </div>
+  <div class="qctrls" style="margin-top:0.5rem;padding-top:0.5rem;border-top:1px dashed var(--border-lo)">
+    <span style="font-size:0.5rem;color:var(--silver-dark);text-transform:uppercase;letter-spacing:0.15em;font-family:'Oswald',sans-serif;align-self:center">Gates:</span>
+    <button class="qbtn" onclick="hadamardAll()" title="Hadamard — equal superposition + random phases for interference">H</button>
+    <button class="qbtn" onclick="pauliXAll()" title="Pauli-X — bitflip classical states (not quantum ones)">X</button>
+    <button class="qbtn" id="zenoBtn" onclick="toggleZeno()" title="Zeno effect — continuous observation pins quantum states">⟨Zeno⟩</button>
   </div>
   <div class="qstat" id="qStat">Quantum engine idle</div>
 </div>
@@ -622,45 +642,53 @@ input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none;width:1rem;hei
 </div>
 
 <div class="guide-section">
-  <div class="guide-title"><span class="num">3</span> DRUM MACHINE</div>
+  <div class="guide-title"><span class="num">3</span> DRUM MACHINE — 7 TRACKS</div>
   <div class="guide-text">
-    16-step sequencer, three tracks:<br><br>
-    <span class="color-dot" style="background:var(--kick)"></span> <strong>KICK</strong> — Sine wave pitch sweep (170→35Hz). Steps 1, 5, 9, 13 gets you a four-on-the-floor, but do whatever.<br><br>
-    <span class="color-dot" style="background:var(--snare)"></span> <strong>SNARE</strong> — Noise burst + triangle osc. Steps 5 and 13 for a backbeat, or scatter them around.<br><br>
-    <span class="color-dot" style="background:var(--hat)"></span> <strong>HI-HAT</strong> — High-pass filtered noise. Offbeats and rolls add movement.<br><br>
-    Click a step to toggle it. White outline = playhead.
+    16 or 32-step sequencer with <strong>seven independent drum tracks</strong>. Each has its own pattern, velocity, quantum state, and mute/solo. Kick, snare and hi-hat are visible by default. Add the rest via the "+ ADD TRACK" buttons at the bottom of the drum panel.<br><br>
+    <span class="color-dot" style="background:var(--kick)"></span> <strong>KICK</strong> — Saturated sine sweep (180→34Hz) + square click + sub punch. Steps 1, 5, 9, 13 for classic four-on-the-floor.<br><br>
+    <span class="color-dot" style="background:var(--snare)"></span> <strong>SNARE</strong> — Two-band noise + detuned triangle oscillators. 909-style crack. Try steps 5 and 13 for a backbeat.<br><br>
+    <span class="color-dot" style="background:var(--clap)"></span> <strong>CLAP</strong> — Three quick bursts + reverberant tail. Classic 909 design. Pairs well with or replaces the snare.<br><br>
+    <span class="color-dot" style="background:var(--hat)"></span> <strong>HAT</strong> — Six inharmonic squares through bandpass (808-style metallic). Offbeats and 16th rolls add movement.<br><br>
+    <span class="color-dot" style="background:var(--openhat)"></span> <strong>OPEN HAT</strong> — Same engine as hat with a longer tail. Great on offbeats against closed hats.<br><br>
+    <span class="color-dot" style="background:var(--ride)"></span> <strong>RIDE</strong> — Bell harmonics (4400Hz + harmonics) + metallic noise sustain. Downbeat ride bells push tracks forward.<br><br>
+    <span class="color-dot" style="background:var(--perc)"></span> <strong>PERC</strong> — Low tom / floor thud. Body + noise attack. Good for fills and syncopated accents.<br><br>
+    Click a step to toggle. <strong>M</strong> mutes, <strong>S</strong> solos, <strong>×</strong> hides the track and clears its pattern. White outline = playhead.
   </div>
 </div>
 
 <div class="guide-section">
   <div class="guide-title"><span class="num">4</span> 303 ACID LINE</div>
   <div class="guide-text">
-    Monophonic bass sequencer, loosely inspired by the TB-303.<br><br>
+    Monophonic bass sequencer with authentic TB-303-inspired engine.<br><br>
     1. Pick a note from the buttons below the grid (C2–G3)<br>
-    2. Click a step to place it<br>
-    3. Click again to remove<br><br>
-    <strong>Glide mode:</strong> GLIDE button makes notes slide into each other (portamento). Tends to sound good for acid lines but it's up to you.
+    2. Click a step to place it, click again to remove<br>
+    3. Right-click (long-press on mobile) a step to cycle through <strong>accent</strong>, <strong>slide</strong>, <strong>both</strong>, off<br><br>
+    <strong>Accent</strong> — Louder, brighter, more resonant, longer decay. Same behaviour as the original 303.<br>
+    <strong>Slide</strong> — Legato portamento into the next note with no envelope retrigger. Essential for acid lines.<br>
+    <strong>Glide mode</strong> — Global toggle making every note glide from the previous one. Try it on dense bass lines.<br>
+    <strong>Key / Octave</strong> — Transpose the whole pattern without rewriting notes.
   </div>
 </div>
 
 <div class="guide-section">
   <div class="guide-title"><span class="num">5</span> ACID SYNTH ENGINE</div>
   <div class="guide-text">
-    Controls that shape how the bass voice sounds:<br><br>
-    <strong>Waveform:</strong> SAW (buzzy, typical 303), SQR (hollower, thicker), TRI (softer), SIN (clean sub)<br><br>
-    <strong>Cutoff</strong> — Filter frequency. Low = dark. High = bright.<br>
-    <strong>Reso</strong> — Filter resonance. Higher values get more squelchy.<br>
-    <strong>Env Mod</strong> — How much the filter opens per note. More of this = more acid character.<br>
-    <strong>Attack</strong> — How fast notes fade in. Low = punchy. Higher = slower swell.<br>
-    <strong>Decay</strong> — Filter sweep length. Short = blippy. Long = swoopy.<br>
-    <strong>Release</strong> — How long the tail rings out.<br>
-    <strong>Accent</strong> — Boosts volume and filter. More = more aggressive.<br>
-    <strong>Sub Vol</strong> — Sub-oscillator level (one octave down). Adds weight.<br>
-    <strong>Glide</strong> — Slide time when Glide mode is on. Lower = quick, higher = slow.
+    Upgraded to a cascaded two-pole filter design with pre-filter saturation for authentic 303 squelch:<br><br>
+    <strong>Waveform:</strong> SAW (buzzy, classic 303), SQR (hollower, thicker), TRI (softer), SIN (clean sub).<br><br>
+    <strong>Cutoff</strong> — Filter frequency. Low = dark and muffled. High = bright and open.<br>
+    <strong>Reso</strong> — Resonance at the cutoff peak. Higher = more squelchy whistle. Above 22 starts self-oscillating.<br>
+    <strong>Env Mod</strong> — How much the filter sweeps per note. This is the main "acid character" knob.<br>
+    <strong>Drive</strong> — Pre-filter tanh saturation. Adds warmth, harmonics, and grit before the filter. Try 30–60 for classic tones.<br>
+    <strong>Attack</strong> — Envelope rise time. Keep low (1–5ms) for punchy 303 feel.<br>
+    <strong>Decay</strong> — Filter envelope decay length. Short = blippy. Long = swoopy. Accent extends this by ~40%.<br>
+    <strong>Release</strong> — Amplitude tail after the decay. Shorter sounds more staccato.<br>
+    <strong>Accent</strong> — Global accent depth. Per-step accents boost cutoff, resonance, decay and volume together.<br>
+    <strong>Sub Vol</strong> — Sub-oscillator (1 octave down, sine) mixed before the filter. Adds low-end weight.<br>
+    <strong>Glide</strong> — Portamento time. Lower = snappy slides, higher = swoopy slides.
   </div>
   <div class="guide-demo">
-    <div class="label">Starting point</div>
-    Cutoff: 400–800 · Reso: 15–22 · Env Mod: 60–85 · Decay: 80–150 · SAW waveform · Glide ON — tweak from there
+    <div class="label">Starting point for classic acid</div>
+    Cutoff: 400–800 · Reso: 18–24 · Env Mod: 75–90 · Drive: 30–55 · Decay: 80–150 · SAW · Glide ON — tweak from there
   </div>
 </div>
 
@@ -681,14 +709,19 @@ input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none;width:1rem;hei
 <div class="guide-section" style="border-color:var(--quantum)">
   <div class="guide-title" style="color:var(--quantum)"><span class="num" style="border-color:var(--quantum);color:var(--quantum)">7</span> QUANTUM ENGINE</div>
   <div class="guide-text">
-    The unusual part. Instead of steps being just ON or OFF, they can be in <strong>superposition</strong> — kind of both at once, resolving differently each loop.<br><br>
+    Instead of steps being just ON or OFF, they can exist in <strong>superposition</strong> — kind of both at once, resolving differently each loop.<br><br>
     <strong>How to use:</strong> Hit the <span class="key">⟨ψ⟩ Quantum</span> toggle on a section, then click steps — they go purple. Each loop, those steps randomly decide whether to fire or not.<br><br>
-    <strong>Superpose All</strong> — Every step goes quantum. Full uncertainty.<br>
-    <strong>⟨ψ| Collapse</strong> — Locks all quantum steps into fixed values. That particular pattern probably won't happen again (odds are around 10⁻²⁸).<br>
-    <strong>Q-Fill</strong> — Adds quantum states to empty steps, leaves your programmed ones alone.<br>
-    <strong>Entangle Kick↔Bass</strong> — Links them. Kick hits spawn correlated bass notes.<br>
-    <strong>Randomize</strong> — Fresh pattern, weighted by probability settings.<br>
-    <strong>Mutate</strong> — Small random tweaks to what's already there.
+    <strong>Core operations:</strong><br>
+    <strong>Superpose All</strong> — Every step goes quantum with uniform phase. Full uncertainty.<br>
+    <strong>⟨ψ| Collapse</strong> — Locks all quantum steps into fixed values. That particular pattern probably won't happen again (odds around 10⁻²⁸).<br>
+    <strong>Q-Fill</strong> — Adds quantum states to empty steps only, leaves your programmed ones alone.<br>
+    <strong>Entangle Kick↔Bass</strong> — Creates a Bell |Φ+⟩ state. Kick hit → bass fires; kick suppressed on an entangled step → bass suppressed too. Real quantum correlation.<br>
+    <strong>Randomize</strong> — Fresh pattern using your probability weights.<br>
+    <strong>Mutate</strong> — Small random tweaks to what's already there.<br><br>
+    <strong>Quantum gates (advanced):</strong><br>
+    <strong>H (Hadamard)</strong> — Puts every step into equal superposition with <em>random phases</em>. Different from Superpose All because phase affects how collapse biases — with phases, interference emerges.<br>
+    <strong>X (Pauli-X)</strong> — Bitflip gate. Inverts every classical ON/OFF state, leaves quantum states alone. Good for quickly inverting a pattern.<br>
+    <strong>⟨Zeno⟩</strong> — Activates the quantum Zeno effect. Continuous observation pins quantum states open — superposed steps mostly stay silent while the toggle is on, creating sparse ghostly variations.
   </div>
 </div>
 
@@ -868,7 +901,7 @@ function toggleSidechain(){
 }
 
 // ===== SYNTH PARAMS =====
-let sP={cutoff:800,resonance:15,envMod:65,decay:150,accent:55,attack:5,release:80,subVol:20,glide:40,waveform:0};
+let sP={cutoff:800,resonance:18,envMod:75,decay:150,accent:55,attack:3,release:60,subVol:25,glide:35,waveform:0,drive:35};
 let glideMode=false;
 let lastBassFreq=0;
 
@@ -911,168 +944,274 @@ function weightedNoteSelect(range){
   return valid[valid.length-1].note;
 }
 
-// ===== DRUM SOUNDS =====
+// ===== DRUM SOUNDS — 909/808 style, richer harmonics =====
+// Shared noise buffer cache for performance
+const _noiseBufCache={};
+function getNoiseBuf(dur){
+  const key=Math.round(dur*1000);
+  if(_noiseBufCache[key])return _noiseBufCache[key];
+  const bsz=Math.floor(AC.sampleRate*dur);
+  const buf=AC.createBuffer(1,bsz,AC.sampleRate);
+  const d=buf.getChannelData(0);
+  for(let i=0;i<bsz;i++)d[i]=Math.random()*2-1;
+  _noiseBufCache[key]=buf;return buf;
+}
+
 function playKick(dest,t,vel){
   vel=(vel===undefined?100:vel)/100;
+  // Body: sine sweep with slight saturation for thump
   const o=AC.createOscillator(),g=AC.createGain();
-  o.type='sine';o.frequency.setValueAtTime(170,t);o.frequency.exponentialRampToValueAtTime(35,t+0.14);
-  g.gain.setValueAtTime(0.9*vel,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.45);
-  o.connect(g);g.connect(dest);o.start(t);o.stop(t+0.45);
+  const sat=AC.createWaveShaper();
+  const c=new Float32Array(256);
+  for(let i=0;i<256;i++){const x=(i*2)/256-1;c[i]=Math.tanh(x*1.8)}
+  sat.curve=c;sat.oversample='2x';
+  o.type='sine';
+  o.frequency.setValueAtTime(180,t);
+  o.frequency.exponentialRampToValueAtTime(52,t+0.04);
+  o.frequency.exponentialRampToValueAtTime(34,t+0.18);
+  g.gain.setValueAtTime(0,t);
+  g.gain.linearRampToValueAtTime(1.0*vel,t+0.003);
+  g.gain.exponentialRampToValueAtTime(0.001,t+0.5);
+  o.connect(sat);sat.connect(g);g.connect(dest);
+  o.start(t);o.stop(t+0.52);
+  // Click/transient
   const o2=AC.createOscillator(),g2=AC.createGain();
-  o2.type='square';o2.frequency.setValueAtTime(440,t);o2.frequency.exponentialRampToValueAtTime(50,t+0.015);
-  g2.gain.setValueAtTime(0.35*vel,t);g2.gain.exponentialRampToValueAtTime(0.001,t+0.03);
-  o2.connect(g2);g2.connect(dest);o2.start(t);o2.stop(t+0.04);
-  if(sidechainOn){scGain.gain.setValueAtTime(0.1,t);scGain.gain.linearRampToValueAtTime(1,t+0.12)}
+  o2.type='square';o2.frequency.setValueAtTime(1800,t);o2.frequency.exponentialRampToValueAtTime(80,t+0.012);
+  g2.gain.setValueAtTime(0.28*vel,t);g2.gain.exponentialRampToValueAtTime(0.001,t+0.025);
+  o2.connect(g2);g2.connect(dest);o2.start(t);o2.stop(t+0.03);
+  // Sub punch
+  const o3=AC.createOscillator(),g3=AC.createGain();
+  o3.type='sine';o3.frequency.setValueAtTime(55,t);
+  g3.gain.setValueAtTime(0.45*vel,t);g3.gain.exponentialRampToValueAtTime(0.001,t+0.25);
+  o3.connect(g3);g3.connect(dest);o3.start(t);o3.stop(t+0.26);
+  if(sidechainOn){scGain.gain.setValueAtTime(0.1,t);scGain.gain.linearRampToValueAtTime(1,t+0.14)}
 }
 
 function playSnare(dest,t,vel){
   vel=(vel===undefined?100:vel)/100;
-  const bsz=AC.sampleRate*0.14,buf=AC.createBuffer(1,bsz,AC.sampleRate),d=buf.getChannelData(0);
-  for(let i=0;i<bsz;i++)d[i]=Math.random()*2-1;
-  const n=AC.createBufferSource();n.buffer=buf;
-  const ng=AC.createGain(),hp=AC.createBiquadFilter();hp.type='highpass';hp.frequency.value=2500;
-  ng.gain.setValueAtTime(0.45*vel,t);ng.gain.exponentialRampToValueAtTime(0.001,t+0.14);
-  n.connect(hp);hp.connect(ng);ng.connect(dest);n.start(t);n.stop(t+0.14);
-  const o=AC.createOscillator(),g=AC.createGain();o.type='triangle';
-  o.frequency.setValueAtTime(220,t);o.frequency.exponentialRampToValueAtTime(80,t+0.04);
-  g.gain.setValueAtTime(0.35*vel,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.08);
-  o.connect(g);g.connect(dest);o.start(t);o.stop(t+0.08);
+  // Noise body — two-band for that 909 crack
+  const buf=getNoiseBuf(0.18);
+  const n1=AC.createBufferSource();n1.buffer=buf;
+  const n1g=AC.createGain();
+  const hp1=AC.createBiquadFilter();hp1.type='highpass';hp1.frequency.value=1500;
+  const bp1=AC.createBiquadFilter();bp1.type='bandpass';bp1.frequency.value=3200;bp1.Q.value=0.7;
+  n1g.gain.setValueAtTime(0,t);
+  n1g.gain.linearRampToValueAtTime(0.42*vel,t+0.002);
+  n1g.gain.exponentialRampToValueAtTime(0.001,t+0.16);
+  n1.connect(hp1);hp1.connect(bp1);bp1.connect(n1g);n1g.connect(dest);
+  n1.start(t);n1.stop(t+0.18);
+  // Tone (two detuned triangles for that snare body)
+  const o1=AC.createOscillator(),g1=AC.createGain();o1.type='triangle';
+  o1.frequency.setValueAtTime(200,t);o1.frequency.exponentialRampToValueAtTime(120,t+0.05);
+  g1.gain.setValueAtTime(0.32*vel,t);g1.gain.exponentialRampToValueAtTime(0.001,t+0.09);
+  o1.connect(g1);g1.connect(dest);o1.start(t);o1.stop(t+0.1);
+  const o2=AC.createOscillator(),g2=AC.createGain();o2.type='triangle';
+  o2.frequency.setValueAtTime(335,t);o2.frequency.exponentialRampToValueAtTime(180,t+0.05);
+  g2.gain.setValueAtTime(0.18*vel,t);g2.gain.exponentialRampToValueAtTime(0.001,t+0.09);
+  o2.connect(g2);g2.connect(dest);o2.start(t);o2.stop(t+0.1);
 }
 
 function playHat(dest,t,vel){
   vel=(vel===undefined?100:vel)/100;
-  const dur=0.05,bsz=AC.sampleRate*dur,buf=AC.createBuffer(1,bsz,AC.sampleRate),d=buf.getChannelData(0);
-  for(let i=0;i<bsz;i++)d[i]=Math.random()*2-1;
-  const s=AC.createBufferSource();s.buffer=buf;
-  const g=AC.createGain(),hp=AC.createBiquadFilter();hp.type='highpass';hp.frequency.value=7500;
-  const bp=AC.createBiquadFilter();bp.type='bandpass';bp.frequency.value=10000;bp.Q.value=1;
-  g.gain.setValueAtTime(0.22*vel,t);g.gain.exponentialRampToValueAtTime(0.001,t+dur);
-  s.connect(hp);hp.connect(bp);bp.connect(g);g.connect(dest);s.start(t);s.stop(t+dur);
+  // Metallic multi-osc approach (6 inharmonic squares) — classic 808/909 hat approach
+  const dur=0.055;
+  const freqs=[316,441,555,735,834,961]; // 808 hat frequencies
+  const busGain=AC.createGain();
+  busGain.gain.setValueAtTime(0,t);
+  busGain.gain.linearRampToValueAtTime(0.2*vel,t+0.001);
+  busGain.gain.exponentialRampToValueAtTime(0.001,t+dur);
+  const hp=AC.createBiquadFilter();hp.type='highpass';hp.frequency.value=7800;
+  const bp=AC.createBiquadFilter();bp.type='bandpass';bp.frequency.value=10500;bp.Q.value=1.2;
+  busGain.connect(hp);hp.connect(bp);bp.connect(dest);
+  freqs.forEach(f=>{
+    const o=AC.createOscillator();o.type='square';o.frequency.value=f;
+    o.connect(busGain);o.start(t);o.stop(t+dur+0.01);
+  });
 }
 
 function playOpenHat(dest,t,vel){
   vel=(vel===undefined?100:vel)/100;
-  const dur=0.25,bsz=AC.sampleRate*dur,buf=AC.createBuffer(1,bsz,AC.sampleRate),d=buf.getChannelData(0);
-  for(let i=0;i<bsz;i++)d[i]=(Math.random()*2-1)*Math.exp(-i/bsz*3);
-  const s=AC.createBufferSource();s.buffer=buf;
-  const g=AC.createGain(),hp=AC.createBiquadFilter();hp.type='highpass';hp.frequency.value=6500;
-  const bp=AC.createBiquadFilter();bp.type='bandpass';bp.frequency.value=9000;bp.Q.value=1.5;
-  g.gain.setValueAtTime(0.18*vel,t);g.gain.exponentialRampToValueAtTime(0.001,t+dur);
-  s.connect(hp);hp.connect(bp);bp.connect(g);g.connect(dest);s.start(t);s.stop(t+dur);
+  const dur=0.32;
+  const freqs=[316,441,555,735,834,961];
+  const busGain=AC.createGain();
+  busGain.gain.setValueAtTime(0,t);
+  busGain.gain.linearRampToValueAtTime(0.16*vel,t+0.001);
+  busGain.gain.exponentialRampToValueAtTime(0.001,t+dur);
+  const hp=AC.createBiquadFilter();hp.type='highpass';hp.frequency.value=6800;
+  const bp=AC.createBiquadFilter();bp.type='bandpass';bp.frequency.value=9200;bp.Q.value=1.6;
+  busGain.connect(hp);hp.connect(bp);bp.connect(dest);
+  freqs.forEach(f=>{
+    const o=AC.createOscillator();o.type='square';o.frequency.value=f;
+    o.connect(busGain);o.start(t);o.stop(t+dur+0.01);
+  });
 }
 
 function playClap(dest,t,vel){
   vel=(vel===undefined?100:vel)/100;
-  // Three quick noise bursts for that classic 909 clap
+  // Classic 909 clap — 3 fast bursts + slightly longer tail
+  const buf=getNoiseBuf(0.03);
   for(let burst=0;burst<3;burst++){
-    const offs=burst*0.012;
-    const dur=0.025,bsz=AC.sampleRate*dur,buf=AC.createBuffer(1,bsz,AC.sampleRate),d=buf.getChannelData(0);
-    for(let i=0;i<bsz;i++)d[i]=Math.random()*2-1;
+    const offs=burst*0.010;
     const n=AC.createBufferSource();n.buffer=buf;
-    const ng=AC.createGain(),bp=AC.createBiquadFilter();bp.type='bandpass';bp.frequency.value=1500;bp.Q.value=2;
-    ng.gain.setValueAtTime(0.35*vel,t+offs);ng.gain.exponentialRampToValueAtTime(0.001,t+offs+dur);
-    n.connect(bp);bp.connect(ng);ng.connect(dest);n.start(t+offs);n.stop(t+offs+dur);
+    const ng=AC.createGain(),bp=AC.createBiquadFilter();bp.type='bandpass';bp.frequency.value=1350;bp.Q.value=2.5;
+    ng.gain.setValueAtTime(0.42*vel,t+offs);ng.gain.exponentialRampToValueAtTime(0.001,t+offs+0.028);
+    n.connect(bp);bp.connect(ng);ng.connect(dest);n.start(t+offs);n.stop(t+offs+0.03);
   }
-  // Long tail
-  const tailDur=0.12,tbsz=AC.sampleRate*tailDur,tbuf=AC.createBuffer(1,tbsz,AC.sampleRate),td=tbuf.getChannelData(0);
-  for(let i=0;i<tbsz;i++)td[i]=(Math.random()*2-1)*Math.exp(-i/tbsz*4);
-  const tn=AC.createBufferSource();tn.buffer=tbuf;
-  const tng=AC.createGain(),tbp=AC.createBiquadFilter();tbp.type='bandpass';tbp.frequency.value=1200;tbp.Q.value=1.5;
-  tng.gain.setValueAtTime(0.15*vel,t+0.04);tng.gain.exponentialRampToValueAtTime(0.001,t+0.04+tailDur);
-  tn.connect(tbp);tbp.connect(tng);tng.connect(dest);tn.start(t+0.04);tn.stop(t+0.04+tailDur);
+  // Reverberant tail
+  const tailBuf=getNoiseBuf(0.14);
+  const tn=AC.createBufferSource();tn.buffer=tailBuf;
+  const tng=AC.createGain(),tbp=AC.createBiquadFilter();tbp.type='bandpass';tbp.frequency.value=1100;tbp.Q.value=1.8;
+  tng.gain.setValueAtTime(0.18*vel,t+0.038);tng.gain.exponentialRampToValueAtTime(0.001,t+0.18);
+  tn.connect(tbp);tbp.connect(tng);tng.connect(dest);tn.start(t+0.038);tn.stop(t+0.19);
 }
 
 function playRide(dest,t,vel){
   vel=(vel===undefined?100:vel)/100;
-  const dur=0.4,bsz=AC.sampleRate*dur,buf=AC.createBuffer(1,bsz,AC.sampleRate),d=buf.getChannelData(0);
-  for(let i=0;i<bsz;i++)d[i]=(Math.random()*2-1)*Math.exp(-i/bsz*2);
-  const s=AC.createBufferSource();s.buffer=buf;
-  const g=AC.createGain(),hp=AC.createBiquadFilter();hp.type='highpass';hp.frequency.value=4000;
-  const bp=AC.createBiquadFilter();bp.type='bandpass';bp.frequency.value=5500;bp.Q.value=3;
-  g.gain.setValueAtTime(0.16*vel,t);g.gain.exponentialRampToValueAtTime(0.001,t+dur);
-  // Bell-like tone
-  const o=AC.createOscillator(),og=AC.createGain();o.type='triangle';o.frequency.value=4400;
-  og.gain.setValueAtTime(0.04*vel,t);og.gain.exponentialRampToValueAtTime(0.001,t+0.3);
-  o.connect(og);og.connect(dest);o.start(t);o.stop(t+0.3);
-  s.connect(hp);hp.connect(bp);bp.connect(g);g.connect(dest);s.start(t);s.stop(t+dur);
+  const dur=0.5;
+  // Bell component (multiple harmonics)
+  [4400,6600,8800,2200].forEach((f,i)=>{
+    const o=AC.createOscillator();o.type='sine';o.frequency.value=f;
+    const g=AC.createGain();
+    const amp=[0.07,0.04,0.02,0.05][i]*vel;
+    g.gain.setValueAtTime(amp,t);g.gain.exponentialRampToValueAtTime(0.001,t+dur*(0.4+i*0.15));
+    o.connect(g);g.connect(dest);o.start(t);o.stop(t+dur);
+  });
+  // Metallic noise sustain
+  const buf=getNoiseBuf(dur);
+  const n=AC.createBufferSource();n.buffer=buf;
+  const ng=AC.createGain(),hp=AC.createBiquadFilter();hp.type='highpass';hp.frequency.value=4500;
+  const bp=AC.createBiquadFilter();bp.type='bandpass';bp.frequency.value=5800;bp.Q.value=4;
+  ng.gain.setValueAtTime(0.09*vel,t);ng.gain.exponentialRampToValueAtTime(0.001,t+dur);
+  n.connect(hp);hp.connect(bp);bp.connect(ng);ng.connect(dest);n.start(t);n.stop(t+dur);
 }
 
 function playPerc(dest,t,vel){
   vel=(vel===undefined?100:vel)/100;
-  // Tom-ish percussive tone
+  // Low tom — body + click
   const o=AC.createOscillator(),g=AC.createGain();
-  o.type='sine';o.frequency.setValueAtTime(180,t);o.frequency.exponentialRampToValueAtTime(80,t+0.1);
-  g.gain.setValueAtTime(0.4*vel,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.2);
-  o.connect(g);g.connect(dest);o.start(t);o.stop(t+0.2);
-  // Click
-  const o2=AC.createOscillator(),g2=AC.createGain();o2.type='square';
-  o2.frequency.setValueAtTime(700,t);o2.frequency.exponentialRampToValueAtTime(100,t+0.02);
-  g2.gain.setValueAtTime(0.15*vel,t);g2.gain.exponentialRampToValueAtTime(0.001,t+0.025);
-  o2.connect(g2);g2.connect(dest);o2.start(t);o2.stop(t+0.03);
+  o.type='sine';o.frequency.setValueAtTime(220,t);o.frequency.exponentialRampToValueAtTime(75,t+0.12);
+  g.gain.setValueAtTime(0.42*vel,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.25);
+  o.connect(g);g.connect(dest);o.start(t);o.stop(t+0.26);
+  // Noisy attack
+  const buf=getNoiseBuf(0.025);
+  const n=AC.createBufferSource();n.buffer=buf;
+  const ng=AC.createGain(),hp=AC.createBiquadFilter();hp.type='highpass';hp.frequency.value=400;
+  ng.gain.setValueAtTime(0.2*vel,t);ng.gain.exponentialRampToValueAtTime(0.001,t+0.025);
+  n.connect(hp);hp.connect(ng);ng.connect(dest);n.start(t);n.stop(t+0.03);
 }
 
 function playAcid(dest,t,note,cutoffBoost,resoBoost,stepAccent,stepSlide,nextNote){
   cutoffBoost=cutoffBoost||0;resoBoost=resoBoost||0;
-  const accentBoost=stepAccent?1.5:1;
   const freq=transposeFreq(NF[note]||130.81);
-  const{cutoff,resonance,envMod,decay,accent,attack,release,subVol,glide,waveform}=sP;
-  const liveCutoff=Math.min(cutoff+cutoffBoost+(stepAccent?800:0),15000);
-  const liveReso=Math.min(resonance+resoBoost+(stepAccent?3:0),30);
+  const{cutoff,resonance,envMod,decay,accent,attack,release,subVol,glide,waveform,drive}=sP;
+  const accAmt=stepAccent?1:0; // 0..1
+  // Accent = louder, brighter, more resonant, longer decay (like real 303)
+  const liveCutoff=Math.max(30,Math.min(cutoff+cutoffBoost+accAmt*900,16000));
+  const liveReso=Math.min(resonance+resoBoost+accAmt*4,30);
+  const accentGain=1+accAmt*0.55;
 
   const waveTypes=['sawtooth','square','triangle','sine'];
   const o=AC.createOscillator();
   o.type=waveTypes[waveform]||'sawtooth';
 
-  // Glide: from prev note OR to next note if step has slide
+  // ---- Slide / glide handling ----
+  // Real 303: slide notes have NO retriggered envelope — they legato from previous pitch
   const prevFreq=lastBassFreq;
-  const slideTime=glide/1000;
-  if(stepSlide&&nextNote){
-    // This note slides into the next one
-    const nextFreq=transposeFreq(NF[nextNote]||freq);
-    o.frequency.setValueAtTime(freq,t);
-    o.frequency.exponentialRampToValueAtTime(nextFreq,t+0.15+slideTime);
-  }else if(glideMode&&prevFreq>0){
+  const doGlide=(stepSlide&&prevFreq>0)||(glideMode&&prevFreq>0);
+  const slideTime=Math.max(0.005,glide/1000);
+  if(doGlide){
     o.frequency.setValueAtTime(prevFreq,t);
     o.frequency.exponentialRampToValueAtTime(freq,t+slideTime);
   }else{
     o.frequency.setValueAtTime(freq,t);
   }
-
-  // Sub oscillator
-  const sub=AC.createOscillator();sub.type='sine';
+  // If THIS note also slides into the NEXT, extend pitch envelope toward it later in decay
+  let lastFreqThisNote=freq;
   if(stepSlide&&nextNote){
-    const nextFreq=transposeFreq(NF[nextNote]||freq);
-    sub.frequency.setValueAtTime(freq/2,t);
-    sub.frequency.exponentialRampToValueAtTime(nextFreq/2,t+0.15+slideTime);
-  }else if(glideMode&&prevFreq>0){
+    const nf=transposeFreq(NF[nextNote]||freq);
+    // Pitch starts gliding toward next note at 60% of decay
+    lastFreqThisNote=nf;
+  }
+
+  // ---- Sub oscillator (1 octave down, sine) ----
+  const sub=AC.createOscillator();sub.type='sine';
+  if(doGlide){
     sub.frequency.setValueAtTime(prevFreq/2,t);
     sub.frequency.exponentialRampToValueAtTime(freq/2,t+slideTime);
   }else{
     sub.frequency.setValueAtTime(freq/2,t);
   }
-  lastBassFreq=freq;
-  const subG=AC.createGain();subG.gain.value=subVol/100*0.25;sub.connect(subG);
+  lastBassFreq=lastFreqThisNote;
+  const subG=AC.createGain();subG.gain.value=subVol/100*0.28;
 
-  const f=AC.createBiquadFilter();f.type='lowpass';f.Q.value=liveReso;
-  const envAmt=liveCutoff+(envMod/100)*4500*(1+accent/150)*accentBoost;
-  const atkTime=Math.max(attack/1000,0.002);
-  f.frequency.setValueAtTime(liveCutoff,t);
-  f.frequency.linearRampToValueAtTime(Math.min(envAmt,15000),t+atkTime);
-  // Accent has longer decay
-  const decayTime=stepAccent?(decay*1.3)/1000:decay/1000;
-  f.frequency.exponentialRampToValueAtTime(Math.max(liveCutoff,20),t+atkTime+decayTime);
+  // ---- Pre-filter drive — tanh waveshaper for harmonic richness ----
+  const driveAmt=(drive||0)/100;
+  const preSat=AC.createWaveShaper();
+  const preC=new Float32Array(512);
+  const driveGainVal=1+driveAmt*4; // boost before clipping
+  for(let i=0;i<512;i++){const x=(i*2)/512-1;preC[i]=Math.tanh(x*driveGainVal)/Math.tanh(driveGainVal||1)}
+  preSat.curve=preC;preSat.oversample='2x';
+  const preGain=AC.createGain();preGain.gain.value=1+driveAmt*0.6;
 
+  // ---- Cascaded 4-pole lowpass (24dB/oct ladder emulation) ----
+  // Each stage is 12dB/oct biquad — 2 stages = 24dB. Q distributed across stages
+  const f1=AC.createBiquadFilter();f1.type='lowpass';
+  const f2=AC.createBiquadFilter();f2.type='lowpass';
+  // Primary resonance on first stage, smaller Q on second for more realistic 303 peak
+  f1.Q.value=Math.min(liveReso,20);
+  f2.Q.value=Math.max(0.3,liveReso*0.3);
+
+  // ---- Filter envelope — EXPONENTIAL (not linear) for squelchy 303 response ----
+  const atkTime=Math.max(attack/1000,0.001);
+  const decayTime=decay/1000*(1+accAmt*0.4); // accent = longer decay
+  const envPeak=Math.min(liveCutoff+(envMod/100)*4800*(1+accAmt*0.4),16000);
+  const envFloor=Math.max(liveCutoff,35);
+  // Start at cutoff, ramp to peak, fall back to cutoff exponentially
+  f1.frequency.setValueAtTime(envFloor,t);
+  f1.frequency.linearRampToValueAtTime(envPeak,t+atkTime);
+  f1.frequency.exponentialRampToValueAtTime(envFloor,t+atkTime+decayTime);
+  // Second stage tracks first with slightly lower ceiling for character
+  f2.frequency.setValueAtTime(envFloor,t);
+  f2.frequency.linearRampToValueAtTime(envPeak*0.9,t+atkTime);
+  f2.frequency.exponentialRampToValueAtTime(envFloor,t+atkTime+decayTime);
+
+  // ---- Amp envelope ----
   const g=AC.createGain();
-  const vol=(0.22+(accent/100)*0.15)*accentBoost;
-  const relTime=release/1000;
-  g.gain.setValueAtTime(0.001,t);
-  g.gain.linearRampToValueAtTime(vol,t+atkTime);
-  g.gain.setValueAtTime(vol*0.8,t+atkTime+0.01);
-  g.gain.exponentialRampToValueAtTime(0.001,t+atkTime+decayTime+relTime);
+  const baseVol=0.22+(accent/100)*0.12;
+  const vol=baseVol*accentGain;
+  const relTime=Math.max(release/1000,0.005);
+  if(doGlide){
+    // LEGATO — no retrigger, gain stays high
+    g.gain.setValueAtTime(vol*0.92,t);
+    g.gain.setValueAtTime(vol,t+atkTime+0.01);
+    g.gain.exponentialRampToValueAtTime(0.001,t+atkTime+decayTime+relTime);
+  }else{
+    g.gain.setValueAtTime(0.001,t);
+    g.gain.linearRampToValueAtTime(vol,t+atkTime);
+    g.gain.setValueAtTime(vol*0.82,t+atkTime+0.008);
+    g.gain.exponentialRampToValueAtTime(0.001,t+atkTime+decayTime+relTime);
+  }
 
-  const totalDur=atkTime+decayTime+relTime+0.15;
-  o.connect(f);subG.connect(f);f.connect(g);g.connect(dest);
-  o.start(t);o.stop(t+totalDur);sub.start(t);sub.stop(t+totalDur);
+  // ---- Pitch slide into next note during decay (if stepSlide has a target) ----
+  if(stepSlide&&nextNote){
+    const nf=transposeFreq(NF[nextNote]||freq);
+    const slideStart=t+atkTime+decayTime*0.5;
+    const slideEnd=t+atkTime+decayTime;
+    o.frequency.setValueAtTime(freq,slideStart);
+    o.frequency.exponentialRampToValueAtTime(nf,slideEnd);
+    sub.frequency.setValueAtTime(freq/2,slideStart);
+    sub.frequency.exponentialRampToValueAtTime(nf/2,slideEnd);
+  }
+
+  // ---- Wire it up ----
+  sub.connect(subG);subG.connect(preGain);
+  o.connect(preGain);
+  preGain.connect(preSat);
+  preSat.connect(f1);f1.connect(f2);
+  f2.connect(g);g.connect(dest);
+  const totalDur=atkTime+decayTime+relTime+0.2;
+  o.start(t);o.stop(t+totalDur);
+  sub.start(t);sub.stop(t+totalDur);
 }
 
 function selWave(idx,el){
@@ -1087,10 +1226,26 @@ let bpm=145,swing=0,curPat=0,curStep=-1,playing=false,nextT=0,tmID=null;
 let qDrum=false,qBass=false,entangled=false;
 let observerLevel=0;
 
-// Decoherence
+// ===== DRUM TRACKS — 7 independent tracks ======
+// Each drum sound is its own track. Users can have any/all simultaneously.
+const DRUM_TRACKS=['kick','snare','clap','hat','openhat','ride','perc'];
+const ALL_TRACKS=[...DRUM_TRACKS,'bass'];
+const TRACK_LABEL={kick:'KICK',snare:'SNARE',clap:'CLAP',hat:'HH',openhat:'OHH',ride:'RIDE',perc:'PERC',bass:'ACID'};
+const TRACK_COLOR={kick:'var(--kick)',snare:'var(--snare)',clap:'var(--clap)',hat:'var(--hat)',openhat:'var(--openhat)',ride:'var(--ride)',perc:'var(--perc)',bass:'var(--bass)'};
+// Default visibility — kick/snare/hat/bass on initially (classic 4-track setup).
+// Users can enable clap/openhat/ride/perc independently.
+let trackVisible={kick:true,snare:true,clap:false,hat:true,openhat:false,ride:false,perc:false};
+
+// Decoherence — state size now covers all 8 tracks (7 drums + 1 bass)
 let decoherenceOn=false,decoherenceRate=15,decoherenceThreshold=50;
-let decoherenceState=new Array(numSteps*4).fill(0);
+let decoherenceState=new Array(numSteps*ALL_TRACKS.length).fill(0);
 let decoEventCount=0;
+
+// Quantum phase (complex amplitude) — enables interference between superposed states.
+// Phase values 0..2π per step; affect collapse probability when entangled/interfering.
+let quantumPhase=new Array(numSteps*ALL_TRACKS.length).fill(0);
+
+function decoIndex(tr,step){return ALL_TRACKS.indexOf(tr)*numSteps+step}
 
 function toggleDecoherence(){
   decoherenceOn=!decoherenceOn;
@@ -1100,12 +1255,22 @@ function toggleDecoherence(){
   refreshUI();
 }
 
-function mkPat(){return{kick:Array(32).fill(false),snare:Array(32).fill(false),hat:Array(32).fill(false),bass:Array(32).fill(null),q:{kick:Array(32).fill(false),snare:Array(32).fill(false),hat:Array(32).fill(false),bass:Array(32).fill(false)},vel:{kick:Array(32).fill(100),snare:Array(32).fill(100),hat:Array(32).fill(100),bass:Array(32).fill(100)},accent:Array(32).fill(false),slide:Array(32).fill(false),stepProb:Array(32).fill(100)}}
+// Pattern: one slot per drum track + bass, each with hits/quantum/velocity.
+// Accent/slide/stepProb are shared per-step (driven by bass-line conventions).
+function mkPat(){
+  const p={bass:Array(32).fill(null),q:{bass:Array(32).fill(false)},vel:{bass:Array(32).fill(100)},accent:Array(32).fill(false),slide:Array(32).fill(false),stepProb:Array(32).fill(100)};
+  DRUM_TRACKS.forEach(tr=>{
+    p[tr]=Array(32).fill(false);
+    p.q[tr]=Array(32).fill(false);
+    p.vel[tr]=Array(32).fill(100);
+  });
+  return p;
+}
 let pats=[mkPat(),mkPat(),mkPat(),mkPat()];
 
-// Mute/Solo per track
-let trackMute={kick:false,snare:false,hat:false,bass:false};
-let trackSolo={kick:false,snare:false,hat:false,bass:false};
+// Mute/Solo for all 8 tracks
+let trackMute={},trackSolo={};
+ALL_TRACKS.forEach(tr=>{trackMute[tr]=false;trackSolo[tr]=false});
 function isAudible(tr){
   const anySolo=Object.values(trackSolo).some(v=>v);
   if(anySolo)return trackSolo[tr];
@@ -1120,7 +1285,8 @@ function P(){return pats[curPat]}
 function toggleSteps(){
   numSteps=numSteps===16?32:16;
   document.getElementById('stepsV').textContent=numSteps;
-  decoherenceState=new Array(numSteps*4).fill(0);
+  decoherenceState=new Array(numSteps*ALL_TRACKS.length).fill(0);
+  quantumPhase=new Array(numSteps*ALL_TRACKS.length).fill(0);
   rebuildGrid();
   if(playing){curStep=-1;nextT=AC.currentTime+0.05}
 }
@@ -1134,70 +1300,87 @@ const templates=[
   {name:'CLASSIC ACID',desc:'Four-on-the-floor with squelchy 303',bpm:138,
    kick:[1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0],snare:[0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0],hat:[1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,1],
    bass:['C2',null,null,'C2',null,'D#2',null,null,'C2',null,'G2',null,'F2',null,'D#2','C2'],
-   synth:{cutoff:600,resonance:18,envMod:75,decay:120,accent:65,attack:3,release:60,subVol:15,glide:30,waveform:0}},
-  {name:'HARD ACID',desc:'Pounding kicks, screaming resonance',bpm:150,
-   kick:[1,0,0,1,1,0,0,1,1,0,0,1,1,0,1,0],snare:[0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,1],hat:[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+   synth:{cutoff:600,resonance:20,envMod:80,decay:130,accent:70,attack:2,release:55,subVol:22,glide:30,waveform:0,drive:40}},
+  {name:'HARD ACID',desc:'Pounding kicks, screaming resonance, clap on 2&4',bpm:150,
+   kick:[1,0,0,1,1,0,0,1,1,0,0,1,1,0,1,0],snare:[0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,1],
+   clap:[0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0],
+   hat:[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+   openhat:[0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0],
    bass:['C2','C2',null,'D#2',null,null,'F2','F2','G2',null,null,'F2',null,'D#2','C2','C2'],
-   synth:{cutoff:400,resonance:22,envMod:85,decay:80,accent:80,attack:2,release:40,subVol:25,glide:20,waveform:0}},
+   synth:{cutoff:400,resonance:25,envMod:90,decay:85,accent:85,attack:1,release:35,subVol:28,glide:18,waveform:0,drive:60}},
   {name:'MINIMAL QUANTUM',desc:'Sparse beats, heavy quantum uncertainty',bpm:140,
    kick:[1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0],snare:[0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0],hat:[0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0],
    bass:['C2',null,null,null,null,null,null,null,'G2',null,null,null,null,null,null,null],
-   synth:{cutoff:500,resonance:20,envMod:70,decay:200,accent:40,attack:8,release:120,subVol:20,glide:60,waveform:0},quantumFill:true},
-  {name:'WAREHOUSE RAVE',desc:'Relentless 4/4, offbeat hats, driving bass',bpm:148,
-   kick:[1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0],snare:[0,0,0,0,1,0,0,1,0,0,0,0,1,0,0,1],hat:[0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0],
+   synth:{cutoff:500,resonance:22,envMod:75,decay:220,accent:50,attack:6,release:130,subVol:22,glide:55,waveform:0,drive:25},quantumFill:true},
+  {name:'WAREHOUSE RAVE',desc:'Relentless 4/4, offbeat hats, driving bass, clap backbeat',bpm:148,
+   kick:[1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0],snare:[0,0,0,0,1,0,0,1,0,0,0,0,1,0,0,1],
+   clap:[0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0],
+   hat:[0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0],
+   openhat:[0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0],
    bass:['C2',null,'C2',null,'D#2',null,null,'C2','F2',null,'D#2',null,'C2',null,'G2','F2'],
-   synth:{cutoff:700,resonance:16,envMod:60,decay:130,accent:50,attack:3,release:70,subVol:18,glide:25,waveform:0}},
-  {name:'DARK ACID',desc:'Menacing low-end, slow filter sweeps',bpm:134,
-   kick:[1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0],snare:[0,0,0,0,1,0,0,0,0,0,1,0,1,0,0,0],hat:[1,0,0,1,0,0,1,0,0,1,0,0,1,0,1,0],
+   synth:{cutoff:700,resonance:18,envMod:70,decay:140,accent:60,attack:2,release:65,subVol:22,glide:25,waveform:0,drive:35}},
+  {name:'DARK ACID',desc:'Menacing low-end, ride on every beat',bpm:134,
+   kick:[1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0],snare:[0,0,0,0,1,0,0,0,0,0,1,0,1,0,0,0],
+   hat:[1,0,0,1,0,0,1,0,0,1,0,0,1,0,1,0],
+   ride:[1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0],
    bass:['C2',null,null,null,'C2',null,'D2',null,null,null,'D#2',null,'C2',null,null,'A#2'],
-   synth:{cutoff:350,resonance:20,envMod:90,decay:250,accent:70,attack:5,release:100,subVol:30,glide:80,waveform:0}},
+   synth:{cutoff:350,resonance:22,envMod:92,decay:270,accent:75,attack:4,release:110,subVol:35,glide:75,waveform:0,drive:50}},
   {name:'SQUARE ACID',desc:'PWM-style square wave, heavy sub',bpm:142,
    kick:[1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0],snare:[0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0],hat:[1,0,1,1,1,0,1,0,1,0,1,1,1,0,1,0],
    bass:['C2',null,'D#2',null,null,'C2',null,'F2',null,null,'G2',null,'D#2','C2',null,null],
-   synth:{cutoff:550,resonance:16,envMod:80,decay:100,accent:60,attack:2,release:50,subVol:30,glide:15,waveform:1}},
-  {name:'LONDON ACID',desc:'SUF-style relentless 303 workout, 145 contract BPM',bpm:145,
-   kick:[1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0],snare:[0,0,0,0,1,0,0,1,0,0,0,0,1,0,0,0],hat:[1,0,1,1,1,0,1,0,1,1,1,0,1,0,1,1],
+   synth:{cutoff:550,resonance:18,envMod:85,decay:110,accent:65,attack:1,release:45,subVol:32,glide:12,waveform:1,drive:45}},
+  {name:'LONDON ACID',desc:'SUF-style relentless 303 workout with perc',bpm:145,
+   kick:[1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0],snare:[0,0,0,0,1,0,0,1,0,0,0,0,1,0,0,0],
+   hat:[1,0,1,1,1,0,1,0,1,1,1,0,1,0,1,1],
+   perc:[0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0],
    bass:['C2',null,'C2','D#2',null,'C2',null,'F2','C2',null,'G2','F2','D#2',null,'C2','D#2'],
-   synth:{cutoff:450,resonance:22,envMod:85,decay:100,accent:75,attack:2,release:45,subVol:18,glide:25,waveform:0}},
+   synth:{cutoff:450,resonance:24,envMod:88,decay:95,accent:80,attack:1,release:40,subVol:22,glide:22,waveform:0,drive:55}},
   {name:'SQUAT PARTY',desc:'Gritty broken hats, heavy 303 slides, distorted',bpm:145,
-   kick:[1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,1],snare:[0,0,0,0,1,0,0,0,0,0,1,0,1,0,0,0],hat:[1,1,0,1,1,0,1,1,0,1,1,0,1,0,1,0],
+   kick:[1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,1],snare:[0,0,0,0,1,0,0,0,0,0,1,0,1,0,0,0],
+   hat:[1,1,0,1,1,0,1,1,0,1,1,0,1,0,1,0],
+   clap:[0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0],
    bass:['C2','C2',null,'D#2','C2',null,'F2',null,'G2','F2',null,'D#2',null,'C2','C2',null],
-   synth:{cutoff:350,resonance:24,envMod:90,decay:85,accent:80,attack:2,release:35,subVol:22,glide:35,waveform:0}},
+   synth:{cutoff:350,resonance:26,envMod:92,decay:85,accent:85,attack:1,release:30,subVol:25,glide:32,waveform:0,drive:70}},
   {name:'303 DISORDER',desc:'Shredded acid line, tight loop, relentless',bpm:146,
    kick:[1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0],snare:[0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,1],hat:[1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0],
    bass:['C2','D#2','C2','F2','D#2','C2','G2','F2','C2','D#2','F2','G2','F2','D#2','C2','C2'],
-   synth:{cutoff:380,resonance:25,envMod:92,decay:70,accent:85,attack:1,release:30,subVol:15,glide:20,waveform:0}},
-  {name:'ACID FREIGHT',desc:'Rolling percussion, chugging bass, builds momentum',bpm:143,
-   kick:[1,0,0,0,1,0,0,0,1,0,0,0,1,0,1,0],snare:[0,0,0,0,1,0,0,1,0,0,0,1,1,0,0,0],hat:[0,1,1,0,0,1,1,0,0,1,1,0,0,1,1,1],
+   synth:{cutoff:380,resonance:27,envMod:94,decay:75,accent:88,attack:1,release:28,subVol:18,glide:16,waveform:0,drive:65}},
+  {name:'ACID FREIGHT',desc:'Rolling percussion with toms, chugging bass',bpm:143,
+   kick:[1,0,0,0,1,0,0,0,1,0,0,0,1,0,1,0],snare:[0,0,0,0,1,0,0,1,0,0,0,1,1,0,0,0],
+   hat:[0,1,1,0,0,1,1,0,0,1,1,0,0,1,1,1],
+   perc:[0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0],
    bass:['C2',null,null,'C2',null,null,'D#2',null,'F2',null,null,'D#2','C2',null,null,'G2'],
-   synth:{cutoff:500,resonance:20,envMod:78,decay:140,accent:65,attack:3,release:55,subVol:25,glide:45,waveform:0}},
+   synth:{cutoff:500,resonance:22,envMod:82,decay:150,accent:68,attack:2,release:55,subVol:28,glide:42,waveform:0,drive:45}},
   {name:'LONDON 32',desc:'Two-bar SUF-style phrase, building second half',bpm:145,
    kick:[1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0, 1,0,0,0,1,0,0,0,1,0,0,1,1,0,1,0],
    snare:[0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0, 0,0,0,0,1,0,0,1,0,0,0,0,1,0,0,1],
    hat:[1,0,1,1,1,0,1,0,1,1,1,0,1,0,1,1, 1,0,1,1,1,1,1,0,1,1,1,1,1,0,1,1],
+   perc:[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, 0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0],
    bass:['C2',null,'C2','D#2',null,'C2',null,'F2','C2',null,'G2','F2','D#2',null,'C2','D#2', 'C2','D#2',null,'F2','G2',null,'F2','D#2','C2',null,'C2','D#2','F2','G2','F2','C2'],
-   synth:{cutoff:420,resonance:23,envMod:88,decay:95,accent:75,attack:2,release:40,subVol:20,glide:28,waveform:0}},
+   synth:{cutoff:420,resonance:25,envMod:90,decay:95,accent:80,attack:1,release:38,subVol:22,glide:25,waveform:0,drive:55}},
   {name:'SQUAT 32',desc:'Two-bar gritty phrase, breakdown into drop',bpm:145,
    kick:[1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,1, 1,0,0,0,1,0,0,0,1,0,1,0,1,0,1,0],
    snare:[0,0,0,0,1,0,0,0,0,0,1,0,1,0,0,0, 0,0,0,0,1,0,0,0,0,0,0,0,1,0,1,1],
    hat:[1,1,0,1,1,0,1,1,0,1,1,0,1,0,1,0, 0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1],
+   clap:[0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0, 0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0],
    bass:['C2','C2',null,'D#2','C2',null,'F2',null,'G2','F2',null,'D#2',null,'C2','C2',null, null,null,null,null,null,null,null,null,'C2','D#2','F2','G2','F2','D#2','C2','C2'],
-   synth:{cutoff:330,resonance:25,envMod:92,decay:80,accent:82,attack:2,release:30,subVol:24,glide:30,waveform:0}},
+   synth:{cutoff:330,resonance:26,envMod:92,decay:80,accent:85,attack:1,release:28,subVol:26,glide:28,waveform:0,drive:65}},
   {name:'DISORDER 32',desc:'Two-bar shredded acid, relentless 303',bpm:146,
    kick:[1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0, 1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0],
    snare:[0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,1, 0,0,0,0,1,0,0,1,0,0,0,0,1,0,0,0],
    hat:[1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0, 1,0,1,0,1,0,1,0,1,0,1,1,1,0,1,1],
    bass:['C2','D#2','C2','F2','D#2','C2','G2','F2','C2','D#2','F2','G2','F2','D#2','C2','C2', 'C2',null,'D#2','F2','G2','F2','D#2','C2','G2','F2','D#2','C2','D#2','F2','G2','C2'],
-   synth:{cutoff:360,resonance:26,envMod:94,decay:65,accent:88,attack:1,release:25,subVol:16,glide:18,waveform:0}},
+   synth:{cutoff:360,resonance:28,envMod:95,decay:65,accent:90,attack:1,release:25,subVol:18,glide:16,waveform:0,drive:70}},
   {name:'FREIGHT 32',desc:'Two-bar rolling builder, second bar intensifies',bpm:143,
    kick:[1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0, 1,0,0,0,1,0,0,0,1,0,0,0,1,0,1,0],
    snare:[0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0, 0,0,0,0,1,0,0,1,0,0,1,0,1,0,0,1],
    hat:[0,1,1,0,0,1,1,0,0,1,1,0,0,1,1,0, 0,1,1,0,0,1,1,1,0,1,1,1,1,1,1,1],
+   ride:[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, 1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0],
    bass:['C2',null,null,'C2',null,null,'D#2',null,'F2',null,null,'D#2','C2',null,null,'G2', 'C2',null,'D#2',null,'F2','D#2','C2',null,'G2','F2','D#2','C2','D#2','F2','G2','C2'],
-   synth:{cutoff:480,resonance:21,envMod:80,decay:130,accent:68,attack:3,release:50,subVol:26,glide:40,waveform:0}},
+   synth:{cutoff:480,resonance:23,envMod:82,decay:140,accent:72,attack:2,release:52,subVol:28,glide:38,waveform:0,drive:45}},
   {name:'QUANTUM CHAOS',desc:'Everything superposed — pure indeterminacy',bpm:155,
    kick:[1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0],snare:[],hat:[],bass:[],
-   synth:{cutoff:600,resonance:18,envMod:70,decay:140,accent:60,attack:4,release:80,subVol:20,glide:40,waveform:0},quantumAll:true},
+   synth:{cutoff:600,resonance:20,envMod:75,decay:140,accent:65,attack:3,release:70,subVol:22,glide:35,waveform:0,drive:40},quantumAll:true},
 ];
 
 function loadTemplate(idx){
@@ -1206,18 +1389,33 @@ function loadTemplate(idx){
   fxP.delayTime=60/bpm*0.75;updateFX();
   // If template has 32 steps, switch to 32 mode
   const tLen=t.kick.length;
-  if(tLen>16&&numSteps===16){numSteps=32;document.getElementById('stepsV').textContent=32;decoherenceState=new Array(128).fill(0);rebuildGrid()}
+  if(tLen>16&&numSteps===16){numSteps=32;document.getElementById('stepsV').textContent=32;decoherenceState=new Array(numSteps*ALL_TRACKS.length).fill(0);quantumPhase=new Array(numSteps*ALL_TRACKS.length).fill(0);rebuildGrid()}
   // Pad template arrays to 32 (internal arrays are always 32)
   function pad(arr,def){const a=[...(arr||[])];while(a.length<32)a.push(def);return a}
+  // Reset all drum tracks to empty
+  DRUM_TRACKS.forEach(tr=>{
+    p[tr]=Array(32).fill(false);
+    p.q[tr]=Array(32).fill(false);
+    p.vel[tr]=Array(32).fill(100);
+  });
+  // Load what the template provides
   p.kick=pad(t.kick,false).map(Boolean);
   p.snare=pad(t.snare||[],false).map(Boolean);
   p.hat=pad(t.hat||[],false).map(Boolean);
+  if(t.clap)p.clap=pad(t.clap,false).map(Boolean);
+  if(t.openhat)p.openhat=pad(t.openhat,false).map(Boolean);
+  if(t.ride)p.ride=pad(t.ride,false).map(Boolean);
+  if(t.perc)p.perc=pad(t.perc,false).map(Boolean);
   p.bass=pad(t.bass||[],null);
-  p.q={kick:Array(32).fill(false),snare:Array(32).fill(false),hat:Array(32).fill(false),bass:Array(32).fill(false)};
-  p.vel={kick:Array(32).fill(100),snare:Array(32).fill(100),hat:Array(32).fill(100),bass:Array(32).fill(100)};
+  p.q.bass=Array(32).fill(false);
+  p.vel.bass=Array(32).fill(100);
   p.accent=Array(32).fill(false);
   p.slide=Array(32).fill(false);
   p.stepProb=Array(32).fill(100);
+  // Auto-show any drum track that has data
+  DRUM_TRACKS.forEach(tr=>{
+    if(p[tr].some(Boolean))trackVisible[tr]=true;
+  });
   if(t.synth){Object.assign(sP,t.synth);refreshKnobs();
     document.querySelectorAll('.wave-btn').forEach(b=>b.classList.remove('on'));
     const wb=document.querySelector(`.wave-btn[data-wave="${sP.waveform}"]`);if(wb)wb.classList.add('on');
@@ -1225,8 +1423,8 @@ function loadTemplate(idx){
   if(t.quantumFill)qFill();
   if(t.quantumAll)superAll();
   if(playing){curStep=-1;nextT=AC.currentTime+0.05}
-  decoherenceState.fill(0);
-  refreshUI();
+  decoherenceState.fill(0);quantumPhase.fill(0);
+  rebuildGrid();
   document.getElementById('qStat').innerHTML=`Loaded <span>${t.name}</span>`;
 }
 
@@ -1282,17 +1480,7 @@ function attachVelDrag(el,tr,s){
   document.addEventListener('touchend',end);
 }
 
-// Drum sound assignment per track row
-let trackSound={kick:'kick',snare:'snare',hat:'hat'};
-const SOUND_OPTIONS={
-  kick:[['kick','KICK'],['perc','PERC']],
-  snare:[['snare','SNARE'],['clap','CLAP']],
-  hat:[['hat','HAT'],['openhat','OPEN HAT'],['ride','RIDE']]
-};
-
-function setTrackSound(tr,snd){
-  trackSound[tr]=snd;
-}
+// ===== DRUM TRACK SOUND DISPATCH ======
 
 function playDrumByName(snd,dest,t,vel){
   switch(snd){
@@ -1309,11 +1497,16 @@ function playDrumByName(snd,dest,t,vel){
 function buildDG(){
   const c=document.getElementById('drumG');c.innerHTML='';
   const cols=getStepCols(true);
-  ['kick','snare','hat'].forEach(tr=>{
+  DRUM_TRACKS.forEach(tr=>{
+    if(!trackVisible[tr])return;
     const r=document.createElement('div');r.className='trow';r.style.gridTemplateColumns=cols;
-    const l=document.createElement('span');l.className='tlbl';l.style.color=`var(--${tr})`;
-    const opts=SOUND_OPTIONS[tr].map(([v,name])=>`<option value="${v}"${trackSound[tr]===v?' selected':''}>${name}</option>`).join('');
-    l.innerHTML=`<select class="snd-sel" onchange="setTrackSound('${tr}',this.value)" onclick="event.stopPropagation()" style="background:var(--chassis);color:var(--${tr});border:1px solid var(--border);font-family:'JetBrains Mono',monospace;font-size:0.4rem;padding:1px 2px;border-radius:2px;cursor:pointer;width:auto;max-width:48px">${opts}</select><span class="ms-btns"><button class="ms-btn${trackMute[tr]?' m-on':''}" onclick="toggleMute('${tr}',event)" title="Mute">M</button><button class="ms-btn${trackSolo[tr]?' s-on':''}" onclick="toggleSolo('${tr}',event)" title="Solo">S</button></span>`;
+    const l=document.createElement('span');l.className='tlbl';l.style.color=TRACK_COLOR[tr];
+    l.innerHTML=`<span class="tname">${TRACK_LABEL[tr]}</span>`+
+      `<span class="ms-btns">`+
+      `<button class="ms-btn${trackMute[tr]?' m-on':''}" onclick="toggleMute('${tr}',event)" title="Mute">M</button>`+
+      `<button class="ms-btn${trackSolo[tr]?' s-on':''}" onclick="toggleSolo('${tr}',event)" title="Solo">S</button>`+
+      `<button class="ms-btn x-btn" onclick="hideTrack('${tr}',event)" title="Hide track">×</button>`+
+      `</span>`;
     r.appendChild(l);
     for(let s=0;s<numSteps;s++){
       const el=document.createElement('div');el.className='step'+(s%4===0?' bm':'');
@@ -1324,6 +1517,27 @@ function buildDG(){
     }
     c.appendChild(r);
   });
+  // "Add track" row for hidden tracks
+  const hidden=DRUM_TRACKS.filter(tr=>!trackVisible[tr]);
+  if(hidden.length){
+    const addRow=document.createElement('div');addRow.className='add-track-row';
+    addRow.innerHTML=`<span class="add-track-lbl">+ ADD TRACK:</span> `+
+      hidden.map(tr=>`<button class="add-track-btn" style="color:${TRACK_COLOR[tr]};border-color:${TRACK_COLOR[tr]}" onclick="showTrack('${tr}')">${TRACK_LABEL[tr]}</button>`).join('');
+    c.appendChild(addRow);
+  }
+}
+
+function showTrack(tr){
+  trackVisible[tr]=true;
+  rebuildGrid();
+}
+function hideTrack(tr,e){
+  if(e){e.stopPropagation()}
+  // Clear the track's pattern data when hiding so hidden tracks don't play
+  trackVisible[tr]=false;
+  const p=P();
+  p[tr].fill(false);p.q[tr].fill(false);p.vel[tr].fill(100);
+  rebuildGrid();
 }
 
 function buildBG(){
@@ -1374,14 +1588,15 @@ function buildNS(){
 // KNOBS
 const acidKnobDefs=[
   {id:'cutoff',label:'Cutoff',min:60,max:5000,val:800,param:'cutoff'},
-  {id:'reso',label:'Reso',min:0,max:30,val:15,param:'resonance'},
-  {id:'envmod',label:'Env Mod',min:0,max:100,val:65,param:'envMod'},
-  {id:'attack',label:'Attack',min:1,max:200,val:5,param:'attack'},
+  {id:'reso',label:'Reso',min:0,max:30,val:18,param:'resonance'},
+  {id:'envmod',label:'Env Mod',min:0,max:100,val:75,param:'envMod'},
+  {id:'drive',label:'Drive',min:0,max:100,val:35,param:'drive'},
+  {id:'attack',label:'Attack',min:1,max:200,val:3,param:'attack'},
   {id:'decay',label:'Decay',min:10,max:500,val:150,param:'decay'},
-  {id:'release',label:'Release',min:10,max:500,val:80,param:'release'},
+  {id:'release',label:'Release',min:10,max:500,val:60,param:'release'},
   {id:'accent',label:'Accent',min:0,max:100,val:55,param:'accent'},
-  {id:'subvol',label:'Sub Vol',min:0,max:100,val:20,param:'subVol'},
-  {id:'glide',label:'Glide',min:5,max:300,val:40,param:'glide'},
+  {id:'subvol',label:'Sub Vol',min:0,max:100,val:25,param:'subVol'},
+  {id:'glide',label:'Glide',min:5,max:300,val:35,param:'glide'},
 ];
 
 const fxKnobDefs=[
@@ -1451,6 +1666,8 @@ function savePreset(){
     bpm,swing,numSteps,
     noteWeights:[...noteWeights],
     glideMode,sidechainOn,
+    trackVisible:{...trackVisible},
+    version:2,
     saved:Date.now()
   };
   try{
@@ -1470,17 +1687,38 @@ function loadPreset(name){
   if(p.numSteps&&p.numSteps!==numSteps){
     numSteps=p.numSteps;
     document.getElementById('stepsV').textContent=numSteps;
-    decoherenceState=new Array(numSteps*4).fill(0);
-    rebuildGrid();
+    decoherenceState=new Array(numSteps*ALL_TRACKS.length).fill(0);
+    quantumPhase=new Array(numSteps*ALL_TRACKS.length).fill(0);
   }
   pats=JSON.parse(JSON.stringify(p.pats));
-  // Ensure pattern integrity (older presets might lack accent/slide)
+  // Ensure pattern integrity — add any missing tracks (for old v1 presets)
   pats.forEach(pt=>{
     if(!pt.accent)pt.accent=Array(32).fill(false);
     if(!pt.slide)pt.slide=Array(32).fill(false);
     if(!pt.stepProb)pt.stepProb=Array(32).fill(100);
-    if(!pt.vel)pt.vel={kick:Array(32).fill(100),snare:Array(32).fill(100),hat:Array(32).fill(100),bass:Array(32).fill(100)};
+    if(!pt.vel)pt.vel={};
+    if(!pt.q)pt.q={};
+    DRUM_TRACKS.concat(['bass']).forEach(tr=>{
+      if(!pt.vel[tr])pt.vel[tr]=Array(32).fill(100);
+    });
+    DRUM_TRACKS.forEach(tr=>{
+      if(!pt[tr])pt[tr]=Array(32).fill(false);
+      if(!pt.q[tr])pt.q[tr]=Array(32).fill(false);
+    });
+    if(!pt.bass)pt.bass=Array(32).fill(null);
+    if(!pt.q.bass)pt.q.bass=Array(32).fill(false);
   });
+  // Restore track visibility (v2+), otherwise reconstruct from pattern data
+  if(p.trackVisible){
+    Object.assign(trackVisible,p.trackVisible);
+  }else{
+    // v1 preset — show any track that has hits
+    DRUM_TRACKS.forEach(tr=>{
+      trackVisible[tr]=pats.some(pt=>pt[tr]&&pt[tr].some(Boolean));
+    });
+    // Ensure kick/snare/hat stay visible for classic presets
+    trackVisible.kick=true;trackVisible.snare=true;trackVisible.hat=true;
+  }
   Object.assign(sP,p.sP);
   Object.assign(fxP,p.fxP);
   bpm=p.bpm;swing=p.swing||0;
@@ -1493,8 +1731,8 @@ function loadPreset(name){
   document.querySelectorAll('.wave-btn').forEach(b=>b.classList.remove('on'));
   const wb=document.querySelector(`.wave-btn[data-wave="${sP.waveform}"]`);if(wb)wb.classList.add('on');
   if(playing){curStep=-1;nextT=AC.currentTime+0.05}
-  decoherenceState.fill(0);
-  refreshUI();
+  decoherenceState.fill(0);quantumPhase.fill(0);
+  rebuildGrid();
   document.getElementById('presetStat').innerHTML=`Loaded <span style="color:var(--acid)">${name}</span>`;
   document.getElementById('qStat').innerHTML=`Loaded preset <span>${name}</span>`;
 }
@@ -1594,7 +1832,6 @@ function toggleVelMode(){
 
 function togDrum(tr,s){
   const p=P();
-  const ti=['kick','snare','hat'].indexOf(tr);
   if(probMode){
     // Cycle probability for ACTIVE step: 100 → 75 → 50 → 25 → 100
     if(p[tr][s]){
@@ -1611,7 +1848,7 @@ function togDrum(tr,s){
     // Reset prob to 100 when newly toggling on
     if(p[tr][s])p.stepProb[s]=100;
   }
-  const di=ti*numSteps+s;
+  const di=decoIndex(tr,s);
   if(di<decoherenceState.length)decoherenceState[di]=0;
   refreshUI();
 }
@@ -1637,7 +1874,7 @@ function refreshMSButtons(){
     b.classList.remove('m-on','s-on');
   });
   // Re-render labels — easier than walking DOM
-  ['kick','snare','hat','bass'].forEach(tr=>{
+  ALL_TRACKS.forEach(tr=>{
     document.querySelectorAll(`.tlbl`).forEach(lbl=>{
       const mBtn=lbl.querySelector(`.ms-btn[onclick*="'${tr}'"][title="Mute"]`);
       const sBtn=lbl.querySelector(`.ms-btn[onclick*="'${tr}'"][title="Solo"]`);
@@ -1664,7 +1901,7 @@ function togBass(s){
     if(!p.bass[s]){p.accent[s]=false;p.slide[s]=false}
     else p.stepProb[s]=100;
   }
-  const di=3*numSteps+s;
+  const di=decoIndex('bass',s);
   if(di<decoherenceState.length)decoherenceState[di]=0;
   refreshUI();
 }
@@ -1679,7 +1916,7 @@ function refreshUI(){
     let isActive=false,vel=100;
     if(tr==='bass'){
       if(p.q.bass[s]){
-        const di=3*numSteps+s;
+        const di=decoIndex('bass',s);
         if(decoherenceOn&&di<decoherenceState.length&&decoherenceState[di]>=decoherenceThreshold)el.classList.add('deco');
         else el.classList.add('q');
       }
@@ -1691,12 +1928,13 @@ function refreshUI(){
         isActive=true;vel=p.vel?.bass?.[s]??100;
       }
     }else{
-      const qi=['kick','snare','hat'].indexOf(tr)*numSteps+s;
-      if(p.q[tr][s]){
+      // drum track
+      const qi=decoIndex(tr,s);
+      if(p.q[tr]&&p.q[tr][s]){
         if(decoherenceOn&&qi<decoherenceState.length&&decoherenceState[qi]>=decoherenceThreshold)el.classList.add('deco');
         else el.classList.add('q');
       }
-      else if(p[tr][s]){el.classList.add('on-'+tr);isActive=true;vel=p.vel?.[tr]?.[s]??100}
+      else if(p[tr]&&p[tr][s]){el.classList.add('on-'+tr);isActive=true;vel=p.vel?.[tr]?.[s]??100}
     }
     // Probability indicator (when not 100% and step is active)
     const sProb=p.stepProb?.[s]??100;
@@ -1726,7 +1964,14 @@ function refreshUI(){
   buildDecoVis();
 }
 
-function clearDrums(){const p=P();['kick','snare','hat'].forEach(t=>{p[t].fill(false);p.q[t].fill(false)});p.bass.fill(null);p.q.bass.fill(false);p.accent.fill(false);p.slide.fill(false);p.stepProb.fill(100);decoherenceState.fill(0);refreshUI()}
+function clearDrums(){
+  const p=P();
+  DRUM_TRACKS.forEach(t=>{p[t].fill(false);p.q[t].fill(false);p.vel[t].fill(100)});
+  p.bass.fill(null);p.q.bass.fill(false);p.vel.bass.fill(100);
+  p.accent.fill(false);p.slide.fill(false);p.stepProb.fill(100);
+  decoherenceState.fill(0);quantumPhase.fill(0);
+  refreshUI();
+}
 
 // ===== TRANSPORT =====
 function togglePlay(){
@@ -1779,17 +2024,17 @@ function startFill(){
   if(fillActive)return;
   fillActive=true;
   const p=P();
-  // Save current drum pattern
-  savedPatternForFill={
-    kick:[...p.kick],snare:[...p.snare],hat:[...p.hat],
-    qkick:[...p.q.kick],qsnare:[...p.q.snare],qhat:[...p.q.hat]
-  };
-  // Apply busy fill: kick on every beat, snare on offbeats, hat 16ths
+  // Save current drum pattern for ALL drum tracks (visible and hidden)
+  savedPatternForFill={};
+  DRUM_TRACKS.forEach(tr=>{
+    savedPatternForFill[tr]=[...p[tr]];
+    savedPatternForFill['q'+tr]=[...p.q[tr]];
+  });
+  // Apply busy fill: kick on every step, snare on offbeats, hat 16ths. Other tracks untouched.
   for(let s=0;s<numSteps;s++){
-    p.kick[s]=true;
-    p.snare[s]=(s%2===1);
-    p.hat[s]=true;
-    p.q.kick[s]=false;p.q.snare[s]=false;p.q.hat[s]=false;
+    if(trackVisible.kick){p.kick[s]=true;p.q.kick[s]=false}
+    if(trackVisible.snare){p.snare[s]=(s%2===1);p.q.snare[s]=false}
+    if(trackVisible.hat){p.hat[s]=true;p.q.hat[s]=false}
   }
   refreshUI();
   document.getElementById('fillBtn').style.background='var(--fx)';
@@ -1800,12 +2045,10 @@ function endFill(){
   if(!fillActive||!savedPatternForFill)return;
   fillActive=false;
   const p=P();
-  p.kick=[...savedPatternForFill.kick];
-  p.snare=[...savedPatternForFill.snare];
-  p.hat=[...savedPatternForFill.hat];
-  p.q.kick=[...savedPatternForFill.qkick];
-  p.q.snare=[...savedPatternForFill.qsnare];
-  p.q.hat=[...savedPatternForFill.qhat];
+  DRUM_TRACKS.forEach(tr=>{
+    if(savedPatternForFill[tr])p[tr]=[...savedPatternForFill[tr]];
+    if(savedPatternForFill['q'+tr])p.q[tr]=[...savedPatternForFill['q'+tr]];
+  });
   savedPatternForFill=null;
   refreshUI();
   document.getElementById('fillBtn').style.background='';
@@ -1815,11 +2058,12 @@ function endFill(){
 function applyDecoherence(){
   const p=P();
   for(let s=0;s<numSteps;s++){
-    ['kick','snare','hat'].forEach((tr,ti)=>{
-      const di=ti*numSteps+s;
-      if(p.q[tr][s]){
+    DRUM_TRACKS.forEach(tr=>{
+      const di=decoIndex(tr,s);
+      if(p.q[tr]&&p.q[tr][s]){
         decoherenceState[di]+=decoherenceRate*(0.5+Math.random()*0.5);
         if(decoherenceState[di]>=100){
+          // Collapse — weighted by accumulated decoherence "pressure"
           p[tr][s]=Math.random()>0.45;
           p.q[tr][s]=false;
           decoherenceState[di]=0;
@@ -1828,7 +2072,7 @@ function applyDecoherence(){
         }
       }
     });
-    const bdi=3*numSteps+s;
+    const bdi=decoIndex('bass',s);
     if(p.q.bass[s]){
       decoherenceState[bdi]+=decoherenceRate*(0.5+Math.random()*0.5);
       if(decoherenceState[bdi]>=100){
@@ -1846,38 +2090,61 @@ function applyDecoherence(){
 function schedStep(dest,step,t){
   const p=P();
   const obs=observerLevel/100;
-  const qKT=0.4-(obs*0.35),qST=0.5-(obs*0.4),qHT=0.35-(obs*0.3),qBT=0.35-(obs*0.3);
+  const qThresh=0.4-(obs*0.35); // global quantum threshold for drums
+  const qBT=0.35-(obs*0.3);
   const obsCB=obs*2000,obsRB=obs*5;
 
-  function decoProb(di,baseThresh){
+  function decoProb(tr,step,baseThresh){
+    const di=decoIndex(tr,step);
     const dLevel=(di<decoherenceState.length?decoherenceState[di]:0)||0;
+    // Decoherence makes the step MORE likely to fire (tending toward definite state).
     return baseThresh*(1-dLevel/200);
   }
   // Step probability check — for non-quantum hits
   const sProb=(p.stepProb&&p.stepProb[step])!==undefined?p.stepProb[step]:100;
   const probPass=Math.random()*100<sProb;
 
-  let kk=p.kick[step];
-  if(p.q.kick[step])kk=Math.random()>decoProb(step,qKT);
-  else if(kk&&!probPass)kk=false;
-  if(kk&&isAudible('kick'))playDrumByName(trackSound.kick,dest,t,p.vel?.kick?.[step]);
-  if(entangled&&kk&&isAudible('bass')&&!p.bass[step]&&!p.q.bass[step])playAcid(dest,t,weightedNoteSelect(8),obsCB,obsRB);
-
-  let sn=p.snare[step];
-  if(p.q.snare[step])sn=Math.random()>decoProb(numSteps+step,qST);
-  else if(sn&&!probPass)sn=false;
-  if(sn&&isAudible('snare'))playDrumByName(trackSound.snare,dest,t,p.vel?.snare?.[step]);
-
-  let hh=p.hat[step];
-  if(p.q.hat[step])hh=Math.random()>decoProb(2*numSteps+step,qHT);
-  else if(hh&&!probPass)hh=false;
-  if(hh&&isAudible('hat'))playDrumByName(trackSound.hat,dest,t,p.vel?.hat?.[step]);
+  // --- Each drum track handled independently ---
+  // Kick needs special handling for sidechain + entanglement.
+  let kickHit=false;
+  DRUM_TRACKS.forEach(tr=>{
+    if(!trackVisible[tr])return;
+    let hit=p[tr][step];
+    if(p.q[tr][step]){
+      if(zenoMode){
+        // Zeno effect — observer keeps freezing the state; hits become rare
+        hit=Math.random()>0.85;
+      }else{
+        // Quantum collapse — base threshold scaled by observer & decoherence
+        hit=Math.random()>decoProb(tr,step,qThresh);
+      }
+    }else if(hit&&!probPass){
+      hit=false;
+    }
+    if(hit&&isAudible(tr)){
+      playDrumByName(tr,dest,t,p.vel?.[tr]?.[step]);
+    }
+    if(tr==='kick')kickHit=hit;
+  });
+  // Kick ↔ Bass entanglement (Bell |Φ+⟩ analogue):
+  // measurement of kick instantly correlates bass. Kick ON → bass likely ON.
+  // Kick OFF on an entangled step → bass suppressed.
+  if(entangled){
+    if(kickHit&&isAudible('bass')&&!p.bass[step]&&!p.q.bass[step]){
+      // Kick fired → collapsed bass partner also fires (correlated)
+      playAcid(dest,t,weightedNoteSelect(8),obsCB,obsRB);
+    }
+  }
 
   if(!isAudible('bass'))return;
   if(p.q.bass[step]){
     const range=Math.max(2,Math.floor(12*(1-obs*0.7)));
-    if(Math.random()>decoProb(3*numSteps+step,qBT))playAcid(dest,t,weightedNoteSelect(range),obsCB,obsRB);
+    // Zeno suppresses bass collapse too
+    const threshold=zenoMode?0.85:decoProb('bass',step,qBT);
+    if(Math.random()>threshold)playAcid(dest,t,weightedNoteSelect(range),obsCB,obsRB);
   }else if(p.bass[step]&&probPass){
+    // If entangled and this step's kick DIDN'T fire, suppress bass (anti-correlation)
+    if(entangled&&!kickHit&&trackVisible.kick&&(p.kick[step]||p.q.kick[step]))return;
     let nextNote=null;
     if(p.slide[step]){
       for(let i=1;i<=numSteps;i++){
@@ -1909,35 +2176,157 @@ function tapTempo(){
 }
 function chPat(d){curPat=(curPat+d+4)%4;document.getElementById('patV').textContent=curPat+1;refreshUI()}
 
-function toggleChain(){
-  chainMode=!chainMode;
-  const btn=document.getElementById('chainBtn');
-  if(chainMode){btn.style.background='var(--acid)';btn.style.color='#000';btn.style.borderColor='var(--acid)'}
-  else{btn.style.background='';btn.style.color='';btn.style.borderColor=''}
+// ===== QUANTUM ENGINE =====
+// Operates on visible drum tracks + bass. Each step has a quantum flag plus a
+// complex phase used for interference effects.
+
+// Iterate all quantum-capable tracks (visible drums + bass)
+function qTracks(){return ALL_TRACKS.filter(tr=>tr==='bass'||trackVisible[tr])}
+
+// Apply Hadamard to a track's steps — turns classical ON/OFF into 50/50 superposition
+function hadamardAll(){
+  const p=P();
+  qTracks().forEach(tr=>{
+    for(let s=0;s<numSteps;s++){
+      if(tr==='bass'){p.q.bass[s]=true;p.bass[s]=null;p.accent[s]=false;p.slide[s]=false}
+      else{p.q[tr][s]=true;p[tr][s]=false}
+      // Random phase — sets up interference potential
+      quantumPhase[decoIndex(tr,s)]=Math.random()*Math.PI*2;
+    }
+  });
+  decoherenceState.fill(0);
+  refreshUI();
+  const count=qTracks().length*numSteps;
+  document.getElementById('qStat').innerHTML=`Hadamard applied — <span>${count} qubits</span> in equal superposition with randomised phases`;
 }
 
-// ===== QUANTUM =====
-function superAll(){const p=P();for(let s=0;s<numSteps;s++){['kick','snare','hat'].forEach(t=>{p.q[t][s]=true;p[t][s]=false});p.q.bass[s]=true;p.bass[s]=null}decoherenceState.fill(0);refreshUI();document.getElementById('qStat').innerHTML=`All ${numSteps*4} steps in <span>superposition</span> — every loop unique`}
-function collapseAll(){const p=P();for(let s=0;s<numSteps;s++){['kick','snare','hat'].forEach(t=>{if(p.q[t][s]){p[t][s]=Math.random()>0.45;p.q[t][s]=false}});if(p.q.bass[s]){p.bass[s]=Math.random()>0.4?weightedNoteSelect(12):null;p.q.bass[s]=false}}decoherenceState.fill(0);refreshUI();logCollapse();document.getElementById('qStat').innerHTML='Wave function <span>collapsed</span> — this pattern will never exist again'}
-function qFill(){const p=P();for(let s=0;s<numSteps;s++){['kick','snare','hat'].forEach(t=>{if(!p[t][s]&&Math.random()>0.5)p.q[t][s]=true});if(!p.bass[s]&&Math.random()>0.5)p.q.bass[s]=true}refreshUI();document.getElementById('qStat').innerHTML='Empty steps filled with <span>quantum uncertainty</span>'}
-function entKB(){entangled=!entangled;document.getElementById('qStat').innerHTML=entangled?'Kick↔Bass <span>entangled</span>':'Entanglement broken'}
+// Superpose All — same as Hadamard but with uniform phase (simpler, classic behaviour)
+function superAll(){
+  const p=P();
+  qTracks().forEach(tr=>{
+    for(let s=0;s<numSteps;s++){
+      if(tr==='bass'){p.q.bass[s]=true;p.bass[s]=null}
+      else{p.q[tr][s]=true;p[tr][s]=false}
+      quantumPhase[decoIndex(tr,s)]=0;
+    }
+  });
+  decoherenceState.fill(0);
+  refreshUI();
+  const count=qTracks().length*numSteps;
+  document.getElementById('qStat').innerHTML=`All ${count} steps in <span>superposition</span> — every loop unique`;
+}
+
+// Pauli-X flip — bitflip gate. Inverts classical states, leaves quantum as-is.
+function pauliXAll(){
+  const p=P();
+  qTracks().forEach(tr=>{
+    for(let s=0;s<numSteps;s++){
+      if(p.q[tr]&&p.q[tr][s])continue; // skip quantum states
+      if(tr==='bass'){
+        p.bass[s]=p.bass[s]?null:selNote;
+      }else{
+        p[tr][s]=!p[tr][s];
+      }
+    }
+  });
+  refreshUI();
+  document.getElementById('qStat').innerHTML='Pauli-X applied — <span>classical states flipped</span>';
+}
+
+function collapseAll(){
+  const p=P();
+  let collapseCount=0;
+  for(let s=0;s<numSteps;s++){
+    qTracks().forEach(tr=>{
+      if(tr==='bass'){
+        if(p.q.bass[s]){
+          // Phase-weighted collapse: cos²(φ/2) bias
+          const phase=quantumPhase[decoIndex('bass',s)]||0;
+          const bias=Math.cos(phase/2)**2;
+          p.bass[s]=Math.random()>(0.6-bias*0.2)?weightedNoteSelect(12):null;
+          p.q.bass[s]=false;
+          collapseCount++;
+        }
+      }else{
+        if(p.q[tr]&&p.q[tr][s]){
+          const phase=quantumPhase[decoIndex(tr,s)]||0;
+          const bias=Math.cos(phase/2)**2;
+          p[tr][s]=Math.random()>(0.55-bias*0.2);
+          p.q[tr][s]=false;
+          collapseCount++;
+        }
+      }
+    });
+  }
+  decoherenceState.fill(0);
+  refreshUI();logCollapse();
+  document.getElementById('qStat').innerHTML=`Wave function <span>collapsed</span> — ${collapseCount} qubits resolved; this exact pattern won't repeat`;
+}
+
+function qFill(){
+  const p=P();
+  qTracks().forEach(tr=>{
+    for(let s=0;s<numSteps;s++){
+      if(tr==='bass'){
+        if(!p.bass[s]&&Math.random()>0.5){p.q.bass[s]=true;quantumPhase[decoIndex('bass',s)]=Math.random()*Math.PI*2}
+      }else{
+        if(!p[tr][s]&&Math.random()>0.5){p.q[tr][s]=true;quantumPhase[decoIndex(tr,s)]=Math.random()*Math.PI*2}
+      }
+    }
+  });
+  refreshUI();
+  document.getElementById('qStat').innerHTML='Empty steps filled with <span>quantum uncertainty</span>';
+}
+
+// Bell state entanglement — full entanglement between kick and bass using
+// maximally entangled |Φ+⟩ = (|00⟩ + |11⟩)/√2 analogue.
+// Classical hit on kick correlates bass presence with high probability.
+function entKB(){
+  entangled=!entangled;
+  document.getElementById('qStat').innerHTML=entangled
+    ?'Kick↔Bass <span>entangled</span> in Bell state |Φ+⟩ — measuring kick determines bass'
+    :'Entanglement broken — kick and bass are now separable';
+}
+
+// Quantum Zeno effect — rapid observation freezes a quantum state.
+// Toggle: when on, quantum steps become less likely to collapse probabilistically
+// (observer keeps looking, state keeps re-preparing).
+let zenoMode=false;
+function toggleZeno(){
+  zenoMode=!zenoMode;
+  const btn=document.getElementById('zenoBtn');
+  if(btn)btn.classList.toggle('on',zenoMode);
+  document.getElementById('qStat').innerHTML=zenoMode
+    ?'<span>Zeno effect active</span> — continuous observation pins quantum states open'
+    :'Zeno effect off — quantum states resolve normally';
+}
 
 function randomize(){
   const p=P();
+  // Use visible tracks' typical patterns
   for(let s=0;s<numSteps;s++){
-    p.kick[s]=s%4===0||Math.random()>0.7;p.snare[s]=s%8===4||Math.random()>0.85;
-    p.hat[s]=Math.random()>0.35;p.bass[s]=Math.random()>0.45?weightedNoteSelect(10):null;
-    p.q.kick[s]=false;p.q.snare[s]=false;p.q.hat[s]=false;p.q.bass[s]=false;
+    if(trackVisible.kick){p.kick[s]=s%4===0||Math.random()>0.7;p.q.kick[s]=false}
+    if(trackVisible.snare){p.snare[s]=s%8===4||Math.random()>0.85;p.q.snare[s]=false}
+    if(trackVisible.clap){p.clap[s]=s%8===4&&Math.random()>0.4;p.q.clap[s]=false}
+    if(trackVisible.hat){p.hat[s]=Math.random()>0.35;p.q.hat[s]=false}
+    if(trackVisible.openhat){p.openhat[s]=(s%4===2)&&Math.random()>0.6;p.q.openhat[s]=false}
+    if(trackVisible.ride){p.ride[s]=Math.random()>0.7;p.q.ride[s]=false}
+    if(trackVisible.perc){p.perc[s]=Math.random()>0.8;p.q.perc[s]=false}
+    p.bass[s]=Math.random()>0.45?weightedNoteSelect(10):null;
+    p.q.bass[s]=false;
   }
-  refreshUI();document.getElementById('qStat').innerHTML='Pattern <span>randomized</span> using weighted probability';
+  refreshUI();document.getElementById('qStat').innerHTML='Pattern <span>randomised</span> using weighted probability';
 }
 
 function mutate(){
   const p=P();
   for(let s=0;s<numSteps;s++){
-    if(Math.random()>0.75)p.kick[s]=!p.kick[s];
-    if(Math.random()>0.8)p.snare[s]=!p.snare[s];
-    if(Math.random()>0.7)p.hat[s]=!p.hat[s];
+    DRUM_TRACKS.forEach(tr=>{
+      if(!trackVisible[tr])return;
+      // Mutation probability varies by track — kick/snare most stable, hats/perc most volatile
+      const mutThresh={kick:0.75,snare:0.8,clap:0.78,hat:0.7,openhat:0.75,ride:0.75,perc:0.72}[tr]||0.75;
+      if(Math.random()>mutThresh)p[tr][s]=!p[tr][s];
+    });
     if(Math.random()>0.7){
       if(p.bass[s])p.bass[s]=Math.random()>0.5?NOTES[(NOTES.indexOf(p.bass[s])+Math.floor(Math.random()*5)-2+NOTES.length)%NOTES.length]:null;
       else if(Math.random()>0.6)p.bass[s]=weightedNoteSelect(10);
@@ -1964,18 +2353,36 @@ async function exportWAV(bars){
   offDry.connect(offGain);offDelMix.connect(offGain);offRevG.connect(offGain);
   offGain.connect(offAC.destination);
   const totalSteps=numSteps*bars,p=P();
+  let lastBassFreqOff=0;
   for(let i=0;i<totalSteps;i++){
     const s=i%numSteps;let actualT=0;
     for(let j=0;j<i;j++){const js=j%numSteps;const jbl=60/bpm/4;const jsw=(js%2===1)?jbl*(swing/100)*0.5:0;actualT+=jbl+jsw}
-    let kk=p.kick[s];if(p.q.kick[s])kk=Math.random()>0.4;
-    if(kk)playKickOff(offAC,offDist,actualT);
-    let sn=p.snare[s];if(p.q.snare[s])sn=Math.random()>0.5;
-    if(sn)playSnareOff(offAC,offDist,actualT);
-    let hh=p.hat[s];if(p.q.hat[s])hh=Math.random()>0.35;
-    if(hh)playHatOff(offAC,offDist,actualT);
-    if(p.q.bass[s]){if(Math.random()>0.35)playAcidOff(offAC,offDist,actualT,weightedNoteSelect(12))}
-    else if(p.bass[s])playAcidOff(offAC,offDist,actualT,p.bass[s]);
-    if(entangled&&kk&&!p.bass[s]&&!p.q.bass[s])playAcidOff(offAC,offDist,actualT,weightedNoteSelect(8));
+    // All 7 drum tracks — respecting visibility & quantum states
+    let kickFired=false;
+    DRUM_TRACKS.forEach(tr=>{
+      if(!trackVisible[tr])return;
+      let hit=p[tr][s];
+      if(p.q[tr]&&p.q[tr][s])hit=Math.random()>0.4;
+      if(hit&&isAudible(tr)){
+        playDrumOff(tr,offAC,offDist,actualT,p.vel?.[tr]?.[s]??100);
+        if(tr==='kick')kickFired=true;
+      }
+    });
+    // Bass
+    if(isAudible('bass')){
+      if(p.q.bass[s]){
+        if(Math.random()>0.35){const n=weightedNoteSelect(12);lastBassFreqOff=playAcidOff(offAC,offDist,actualT,n,false,false,null,lastBassFreqOff)}
+      }else if(p.bass[s]){
+        let nextNote=null;
+        if(p.slide[s]){
+          for(let j=1;j<=numSteps;j++){const ns=(s+j)%numSteps;if(p.bass[ns]){nextNote=p.bass[ns];break}}
+        }
+        lastBassFreqOff=playAcidOff(offAC,offDist,actualT,p.bass[s],p.accent[s],p.slide[s],nextNote,lastBassFreqOff);
+      }
+      if(entangled&&kickFired&&!p.bass[s]&&!p.q.bass[s]){
+        lastBassFreqOff=playAcidOff(offAC,offDist,actualT,weightedNoteSelect(8),false,false,null,lastBassFreqOff);
+      }
+    }
   }
   try{
     const rendered=await offAC.startRendering();
@@ -1992,32 +2399,162 @@ async function exportWAV(bars){
 
 function buildReverbOff(ctx,dur,decay){const len=ctx.sampleRate*dur,buf=ctx.createBuffer(2,len,ctx.sampleRate);for(let ch=0;ch<2;ch++){const d=buf.getChannelData(ch);for(let i=0;i<len;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/len,decay)}return buf}
 
-function playKickOff(ctx,dest,t){
-  const o=ctx.createOscillator(),g=ctx.createGain();o.type='sine';o.frequency.setValueAtTime(170,t);o.frequency.exponentialRampToValueAtTime(35,t+0.14);g.gain.setValueAtTime(0.9,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.45);o.connect(g);g.connect(dest);o.start(t);o.stop(t+0.45);
-  const o2=ctx.createOscillator(),g2=ctx.createGain();o2.type='square';o2.frequency.setValueAtTime(440,t);o2.frequency.exponentialRampToValueAtTime(50,t+0.015);g2.gain.setValueAtTime(0.35,t);g2.gain.exponentialRampToValueAtTime(0.001,t+0.03);o2.connect(g2);g2.connect(dest);o2.start(t);o2.stop(t+0.04);
+// Unified offline drum playback — mirrors live functions but on offline context
+function playDrumOff(trackName,ctx,dest,t,vel){
+  vel=(vel||100)/100;
+  if(trackName==='kick'){
+    const o=ctx.createOscillator(),g=ctx.createGain();
+    o.type='sine';o.frequency.setValueAtTime(180,t);
+    o.frequency.exponentialRampToValueAtTime(52,t+0.04);
+    o.frequency.exponentialRampToValueAtTime(34,t+0.18);
+    g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(1.0*vel,t+0.003);
+    g.gain.exponentialRampToValueAtTime(0.001,t+0.5);
+    o.connect(g);g.connect(dest);o.start(t);o.stop(t+0.52);
+    const o2=ctx.createOscillator(),g2=ctx.createGain();
+    o2.type='square';o2.frequency.setValueAtTime(1800,t);o2.frequency.exponentialRampToValueAtTime(80,t+0.012);
+    g2.gain.setValueAtTime(0.28*vel,t);g2.gain.exponentialRampToValueAtTime(0.001,t+0.025);
+    o2.connect(g2);g2.connect(dest);o2.start(t);o2.stop(t+0.03);
+    const o3=ctx.createOscillator(),g3=ctx.createGain();
+    o3.type='sine';o3.frequency.setValueAtTime(55,t);
+    g3.gain.setValueAtTime(0.45*vel,t);g3.gain.exponentialRampToValueAtTime(0.001,t+0.25);
+    o3.connect(g3);g3.connect(dest);o3.start(t);o3.stop(t+0.26);
+  }else if(trackName==='snare'){
+    const bsz=ctx.sampleRate*0.18,buf=ctx.createBuffer(1,bsz,ctx.sampleRate),d=buf.getChannelData(0);
+    for(let i=0;i<bsz;i++)d[i]=Math.random()*2-1;
+    const n1=ctx.createBufferSource();n1.buffer=buf;
+    const n1g=ctx.createGain();
+    const hp1=ctx.createBiquadFilter();hp1.type='highpass';hp1.frequency.value=1500;
+    const bp1=ctx.createBiquadFilter();bp1.type='bandpass';bp1.frequency.value=3200;bp1.Q.value=0.7;
+    n1g.gain.setValueAtTime(0,t);n1g.gain.linearRampToValueAtTime(0.42*vel,t+0.002);
+    n1g.gain.exponentialRampToValueAtTime(0.001,t+0.16);
+    n1.connect(hp1);hp1.connect(bp1);bp1.connect(n1g);n1g.connect(dest);
+    n1.start(t);n1.stop(t+0.18);
+    const o1=ctx.createOscillator(),g1=ctx.createGain();o1.type='triangle';
+    o1.frequency.setValueAtTime(200,t);o1.frequency.exponentialRampToValueAtTime(120,t+0.05);
+    g1.gain.setValueAtTime(0.32*vel,t);g1.gain.exponentialRampToValueAtTime(0.001,t+0.09);
+    o1.connect(g1);g1.connect(dest);o1.start(t);o1.stop(t+0.1);
+    const o2=ctx.createOscillator(),g2=ctx.createGain();o2.type='triangle';
+    o2.frequency.setValueAtTime(335,t);o2.frequency.exponentialRampToValueAtTime(180,t+0.05);
+    g2.gain.setValueAtTime(0.18*vel,t);g2.gain.exponentialRampToValueAtTime(0.001,t+0.09);
+    o2.connect(g2);g2.connect(dest);o2.start(t);o2.stop(t+0.1);
+  }else if(trackName==='hat'||trackName==='openhat'){
+    const dur=trackName==='openhat'?0.32:0.055;
+    const freqs=[316,441,555,735,834,961];
+    const busGain=ctx.createGain();
+    busGain.gain.setValueAtTime(0,t);busGain.gain.linearRampToValueAtTime(0.2*vel,t+0.001);
+    busGain.gain.exponentialRampToValueAtTime(0.001,t+dur);
+    const hp=ctx.createBiquadFilter();hp.type='highpass';hp.frequency.value=trackName==='openhat'?6800:7800;
+    const bp=ctx.createBiquadFilter();bp.type='bandpass';bp.frequency.value=trackName==='openhat'?9200:10500;bp.Q.value=trackName==='openhat'?1.6:1.2;
+    busGain.connect(hp);hp.connect(bp);bp.connect(dest);
+    freqs.forEach(f=>{const o=ctx.createOscillator();o.type='square';o.frequency.value=f;o.connect(busGain);o.start(t);o.stop(t+dur+0.01)});
+  }else if(trackName==='clap'){
+    const bsz=ctx.sampleRate*0.03,buf=ctx.createBuffer(1,bsz,ctx.sampleRate),d=buf.getChannelData(0);
+    for(let i=0;i<bsz;i++)d[i]=Math.random()*2-1;
+    for(let b=0;b<3;b++){
+      const offs=b*0.010;
+      const n=ctx.createBufferSource();n.buffer=buf;
+      const ng=ctx.createGain(),bp=ctx.createBiquadFilter();bp.type='bandpass';bp.frequency.value=1350;bp.Q.value=2.5;
+      ng.gain.setValueAtTime(0.42*vel,t+offs);ng.gain.exponentialRampToValueAtTime(0.001,t+offs+0.028);
+      n.connect(bp);bp.connect(ng);ng.connect(dest);n.start(t+offs);n.stop(t+offs+0.03);
+    }
+    const tbsz=ctx.sampleRate*0.14,tbuf=ctx.createBuffer(1,tbsz,ctx.sampleRate),td=tbuf.getChannelData(0);
+    for(let i=0;i<tbsz;i++)td[i]=Math.random()*2-1;
+    const tn=ctx.createBufferSource();tn.buffer=tbuf;
+    const tng=ctx.createGain(),tbp=ctx.createBiquadFilter();tbp.type='bandpass';tbp.frequency.value=1100;tbp.Q.value=1.8;
+    tng.gain.setValueAtTime(0.18*vel,t+0.038);tng.gain.exponentialRampToValueAtTime(0.001,t+0.18);
+    tn.connect(tbp);tbp.connect(tng);tng.connect(dest);tn.start(t+0.038);tn.stop(t+0.19);
+  }else if(trackName==='ride'){
+    [4400,6600,8800,2200].forEach((f,i)=>{
+      const o=ctx.createOscillator();o.type='sine';o.frequency.value=f;
+      const g=ctx.createGain();const amp=[0.07,0.04,0.02,0.05][i]*vel;
+      g.gain.setValueAtTime(amp,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.5*(0.4+i*0.15));
+      o.connect(g);g.connect(dest);o.start(t);o.stop(t+0.5);
+    });
+    const bsz=ctx.sampleRate*0.5,buf=ctx.createBuffer(1,bsz,ctx.sampleRate),d=buf.getChannelData(0);
+    for(let i=0;i<bsz;i++)d[i]=Math.random()*2-1;
+    const n=ctx.createBufferSource();n.buffer=buf;
+    const ng=ctx.createGain(),hp=ctx.createBiquadFilter();hp.type='highpass';hp.frequency.value=4500;
+    const bp=ctx.createBiquadFilter();bp.type='bandpass';bp.frequency.value=5800;bp.Q.value=4;
+    ng.gain.setValueAtTime(0.09*vel,t);ng.gain.exponentialRampToValueAtTime(0.001,t+0.5);
+    n.connect(hp);hp.connect(bp);bp.connect(ng);ng.connect(dest);n.start(t);n.stop(t+0.5);
+  }else if(trackName==='perc'){
+    const o=ctx.createOscillator(),g=ctx.createGain();
+    o.type='sine';o.frequency.setValueAtTime(220,t);o.frequency.exponentialRampToValueAtTime(75,t+0.12);
+    g.gain.setValueAtTime(0.42*vel,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.25);
+    o.connect(g);g.connect(dest);o.start(t);o.stop(t+0.26);
+    const bsz=ctx.sampleRate*0.025,buf=ctx.createBuffer(1,bsz,ctx.sampleRate),d=buf.getChannelData(0);
+    for(let i=0;i<bsz;i++)d[i]=Math.random()*2-1;
+    const n=ctx.createBufferSource();n.buffer=buf;
+    const ng=ctx.createGain(),hp=ctx.createBiquadFilter();hp.type='highpass';hp.frequency.value=400;
+    ng.gain.setValueAtTime(0.2*vel,t);ng.gain.exponentialRampToValueAtTime(0.001,t+0.025);
+    n.connect(hp);hp.connect(ng);ng.connect(dest);n.start(t);n.stop(t+0.03);
+  }
 }
-function playSnareOff(ctx,dest,t){
-  const bsz=ctx.sampleRate*0.14,buf=ctx.createBuffer(1,bsz,ctx.sampleRate),d=buf.getChannelData(0);for(let i=0;i<bsz;i++)d[i]=Math.random()*2-1;
-  const n=ctx.createBufferSource();n.buffer=buf;const ng=ctx.createGain(),hp=ctx.createBiquadFilter();hp.type='highpass';hp.frequency.value=2500;ng.gain.setValueAtTime(0.45,t);ng.gain.exponentialRampToValueAtTime(0.001,t+0.14);n.connect(hp);hp.connect(ng);ng.connect(dest);n.start(t);n.stop(t+0.14);
-  const o=ctx.createOscillator(),g=ctx.createGain();o.type='triangle';o.frequency.setValueAtTime(220,t);o.frequency.exponentialRampToValueAtTime(80,t+0.04);g.gain.setValueAtTime(0.35,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.08);o.connect(g);g.connect(dest);o.start(t);o.stop(t+0.08);
-}
-function playHatOff(ctx,dest,t){
-  const dur=0.05,bsz=ctx.sampleRate*dur,buf=ctx.createBuffer(1,bsz,ctx.sampleRate),d=buf.getChannelData(0);for(let i=0;i<bsz;i++)d[i]=Math.random()*2-1;
-  const s=ctx.createBufferSource();s.buffer=buf;const g=ctx.createGain(),hp=ctx.createBiquadFilter();hp.type='highpass';hp.frequency.value=7500;g.gain.setValueAtTime(0.22,t);g.gain.exponentialRampToValueAtTime(0.001,t+dur);s.connect(hp);hp.connect(g);g.connect(dest);s.start(t);s.stop(t+dur);
-}
-function playAcidOff(ctx,dest,t,note){
-  const freq=NF[note]||130.81;const{cutoff,resonance,envMod,decay,accent,attack,release,subVol,waveform}=sP;
+
+function playAcidOff(ctx,dest,t,note,stepAccent,stepSlide,nextNote,prevFreq){
+  const freq=transposeFreq(NF[note]||130.81);
+  const{cutoff,resonance,envMod,decay,accent,attack,release,subVol,glide,waveform,drive}=sP;
+  const accAmt=stepAccent?1:0;
+  const liveCutoff=Math.max(30,Math.min(cutoff+accAmt*900,16000));
+  const liveReso=Math.min(resonance+accAmt*4,30);
+  const accentGain=1+accAmt*0.55;
   const waveTypes=['sawtooth','square','triangle','sine'];
-  const o=ctx.createOscillator();o.type=waveTypes[waveform]||'sawtooth';o.frequency.setValueAtTime(freq,t);
-  const sub=ctx.createOscillator();sub.type='sine';sub.frequency.setValueAtTime(freq/2,t);
-  const subG=ctx.createGain();subG.gain.value=subVol/100*0.25;sub.connect(subG);
-  const f=ctx.createBiquadFilter();f.type='lowpass';f.Q.value=resonance;
-  const envA=cutoff+(envMod/100)*4500*(1+accent/150);const atkTime=Math.max(attack/1000,0.002);
-  f.frequency.setValueAtTime(cutoff,t);f.frequency.linearRampToValueAtTime(Math.min(envA,15000),t+atkTime);f.frequency.exponentialRampToValueAtTime(Math.max(cutoff,20),t+atkTime+decay/1000);
-  const g=ctx.createGain();const vol=0.22+(accent/100)*0.15;const relTime=release/1000;
-  g.gain.setValueAtTime(0.001,t);g.gain.linearRampToValueAtTime(vol,t+atkTime);g.gain.setValueAtTime(vol*0.8,t+atkTime+0.01);g.gain.exponentialRampToValueAtTime(0.001,t+atkTime+decay/1000+relTime);
-  const totalDur=atkTime+decay/1000+relTime+0.05;
-  o.connect(f);subG.connect(f);f.connect(g);g.connect(dest);o.start(t);o.stop(t+totalDur);sub.start(t);sub.stop(t+totalDur);
+  const o=ctx.createOscillator();o.type=waveTypes[waveform]||'sawtooth';
+  const doGlide=(stepSlide&&prevFreq>0)||(glideMode&&prevFreq>0);
+  const slideTime=Math.max(0.005,glide/1000);
+  if(doGlide){o.frequency.setValueAtTime(prevFreq,t);o.frequency.exponentialRampToValueAtTime(freq,t+slideTime)}
+  else o.frequency.setValueAtTime(freq,t);
+  let lastFreqThisNote=freq;
+  const sub=ctx.createOscillator();sub.type='sine';
+  if(doGlide){sub.frequency.setValueAtTime(prevFreq/2,t);sub.frequency.exponentialRampToValueAtTime(freq/2,t+slideTime)}
+  else sub.frequency.setValueAtTime(freq/2,t);
+  const subG=ctx.createGain();subG.gain.value=subVol/100*0.28;
+  const driveAmt=(drive||0)/100;
+  const preSat=ctx.createWaveShaper();
+  const preC=new Float32Array(512);
+  const driveGainVal=1+driveAmt*4;
+  for(let i=0;i<512;i++){const x=(i*2)/512-1;preC[i]=Math.tanh(x*driveGainVal)/Math.tanh(driveGainVal||1)}
+  preSat.curve=preC;preSat.oversample='2x';
+  const preGain=ctx.createGain();preGain.gain.value=1+driveAmt*0.6;
+  const f1=ctx.createBiquadFilter();f1.type='lowpass';
+  const f2=ctx.createBiquadFilter();f2.type='lowpass';
+  f1.Q.value=Math.min(liveReso,20);
+  f2.Q.value=Math.max(0.3,liveReso*0.3);
+  const atkTime=Math.max(attack/1000,0.001);
+  const decayTime=decay/1000*(1+accAmt*0.4);
+  const envPeak=Math.min(liveCutoff+(envMod/100)*4800*(1+accAmt*0.4),16000);
+  const envFloor=Math.max(liveCutoff,35);
+  f1.frequency.setValueAtTime(envFloor,t);
+  f1.frequency.linearRampToValueAtTime(envPeak,t+atkTime);
+  f1.frequency.exponentialRampToValueAtTime(envFloor,t+atkTime+decayTime);
+  f2.frequency.setValueAtTime(envFloor,t);
+  f2.frequency.linearRampToValueAtTime(envPeak*0.9,t+atkTime);
+  f2.frequency.exponentialRampToValueAtTime(envFloor,t+atkTime+decayTime);
+  const g=ctx.createGain();
+  const baseVol=0.22+(accent/100)*0.12;
+  const vol=baseVol*accentGain;
+  const relTime=Math.max(release/1000,0.005);
+  if(doGlide){
+    g.gain.setValueAtTime(vol*0.92,t);g.gain.setValueAtTime(vol,t+atkTime+0.01);
+    g.gain.exponentialRampToValueAtTime(0.001,t+atkTime+decayTime+relTime);
+  }else{
+    g.gain.setValueAtTime(0.001,t);g.gain.linearRampToValueAtTime(vol,t+atkTime);
+    g.gain.setValueAtTime(vol*0.82,t+atkTime+0.008);
+    g.gain.exponentialRampToValueAtTime(0.001,t+atkTime+decayTime+relTime);
+  }
+  if(stepSlide&&nextNote){
+    const nf=transposeFreq(NF[nextNote]||freq);
+    const slideStart=t+atkTime+decayTime*0.5;
+    const slideEnd=t+atkTime+decayTime;
+    o.frequency.setValueAtTime(freq,slideStart);o.frequency.exponentialRampToValueAtTime(nf,slideEnd);
+    sub.frequency.setValueAtTime(freq/2,slideStart);sub.frequency.exponentialRampToValueAtTime(nf/2,slideEnd);
+    lastFreqThisNote=nf;
+  }
+  sub.connect(subG);subG.connect(preGain);o.connect(preGain);
+  preGain.connect(preSat);preSat.connect(f1);f1.connect(f2);f2.connect(g);g.connect(dest);
+  const totalDur=atkTime+decayTime+relTime+0.2;
+  o.start(t);o.stop(t+totalDur);sub.start(t);sub.stop(t+totalDur);
+  return lastFreqThisNote;
 }
 
 function bufToWav(buf){
@@ -2059,14 +2596,14 @@ function exportMIDI(bars){
         const tick=bar*numSteps*ticksPerStep+s*ticksPerStep;
         const probPass=Math.random()*100<((p.stepProb&&p.stepProb[s])??100);
 
-        // Drum tracks — collapse quantum once per export
-        ['kick','snare','hat'].forEach((tr,ti)=>{
+        // All drum tracks — collapse quantum once per export, respect visibility
+        DRUM_TRACKS.forEach(tr=>{
+          if(!trackVisible[tr])return;
           let hit=p[tr][s];
-          if(p.q[tr][s])hit=Math.random()>0.4;
+          if(p.q[tr]&&p.q[tr][s])hit=Math.random()>0.4;
           else if(hit&&!probPass)hit=false;
           if(hit&&isAudible(tr)){
-            const sndName=trackSound[tr]||tr;
-            const midiNote=MIDI_DRUM_NOTE[sndName]||MIDI_DRUM_NOTE[tr];
+            const midiNote=MIDI_DRUM_NOTE[tr];
             const vel=Math.round((p.vel?.[tr]?.[s]??100)*1.27); // 0-100 -> 0-127
             events.push([tick,0x99,midiNote,Math.min(127,vel)]); // Note on, ch 10
             events.push([tick+ticksPerStep-2,0x89,midiNote,0]); // Note off
@@ -2209,7 +2746,7 @@ function drawWF(){
   }else if(wfMode==='decoherence'){
     // Show gradual transition from many waves to fewer
     const activeQ=P().q.kick.filter(Boolean).length+P().q.bass.filter(Boolean).length;
-    const decoLevel=decoherenceOn?decoherenceState.reduce((s,v)=>s+v,0)/(numSteps*4)/100:0;
+    const decoLevel=decoherenceOn?decoherenceState.reduce((s,v)=>s+v,0)/(numSteps*ALL_TRACKS.length)/100:0;
     const nWaves=Math.max(1,Math.round(7*(1-decoLevel)));
     for(let l=0;l<nWaves;l++){
       wfCtx.beginPath();const freq=0.005+l*0.005;const amp=h*0.12*pa/(1+l*0.15);

@@ -343,7 +343,15 @@ input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none;width:1rem;hei
 <div class="panel acid-border">
   <div class="stitle">
     <span class="l" style="color:var(--acid)"><span class="dot" style="background:var(--acid);box-shadow:0 0 6px var(--acid)"></span>303 ACID LINE</span>
-    <div style="display:flex;gap:.4rem">
+    <div style="display:flex;gap:.4rem;flex-wrap:wrap;align-items:center">
+      <span style="font-size:0.45rem;color:var(--silver-dark);text-transform:uppercase;letter-spacing:0.1em;font-family:'Oswald',sans-serif">Key</span>
+      <select id="keySel" onchange="setKey(this.value)" style="background:var(--chassis);color:var(--acid);border:1px solid var(--border);font-family:'JetBrains Mono',monospace;font-size:0.55rem;padding:0.2rem;border-radius:3px;cursor:pointer">
+        <option value="0">C</option><option value="1">C#</option><option value="2">D</option><option value="3">D#</option><option value="4">E</option><option value="5">F</option><option value="6">F#</option><option value="7">G</option><option value="8">G#</option><option value="9">A</option><option value="10">A#</option><option value="11">B</option>
+      </select>
+      <span style="font-size:0.45rem;color:var(--silver-dark);text-transform:uppercase;letter-spacing:0.1em;font-family:'Oswald',sans-serif">Oct</span>
+      <button class="pbtn" onclick="chOctave(-1)">-</button>
+      <span class="pval" style="font-size:0.7rem;min-width:14px" id="octV">0</span>
+      <button class="pbtn" onclick="chOctave(1)">+</button>
       <button class="tbtn" id="qBT" onclick="qBass=!qBass;this.classList.toggle('on',qBass)">⟨ψ⟩ Quantum</button>
       <button class="tbtn" id="glideT" onclick="glideMode=!glideMode;this.classList.toggle('on',glideMode)">Glide</button>
     </div>
@@ -462,14 +470,35 @@ input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none;width:1rem;hei
 <!-- EXPORT -->
 <div class="panel acid-border">
   <div class="stitle"><span class="l" style="color:var(--acid)">EXPORT</span></div>
-  <p class="info">Record loops to WAV. Each export captures a unique quantum collapse.</p>
+  <p class="info">Record loops to WAV (your sounds) or MIDI (drop into your DAW with your own sounds). Each WAV export captures a unique quantum collapse.</p>
   <div class="export-row">
-    <button class="xbtn" onclick="exportWAV(4)">Export 4 Bars</button>
-    <button class="xbtn" onclick="exportWAV(8)">Export 8 Bars</button>
-    <button class="xbtn" onclick="exportWAV(16)">Export 16 Bars</button>
-    <button class="xbtn sec" onclick="exportWAV(1)">1 Bar</button>
+    <button class="xbtn" onclick="exportWAV(4)">WAV 4 Bars</button>
+    <button class="xbtn" onclick="exportWAV(8)">WAV 8 Bars</button>
+    <button class="xbtn" onclick="exportWAV(16)">WAV 16 Bars</button>
+    <button class="xbtn sec" onclick="exportWAV(1)">WAV 1 Bar</button>
+  </div>
+  <div class="export-row" style="margin-top:0.5rem">
+    <button class="xbtn" style="background:var(--quantum);border-color:var(--quantum);color:#fff" onclick="exportMIDI(1)">MIDI 1 Bar</button>
+    <button class="xbtn" style="background:var(--quantum);border-color:var(--quantum);color:#fff" onclick="exportMIDI(4)">MIDI 4 Bars</button>
+    <button class="xbtn" style="background:var(--quantum);border-color:var(--quantum);color:#fff" onclick="exportMIDI(8)">MIDI 8 Bars</button>
+    <button class="xbtn" style="background:var(--quantum);border-color:var(--quantum);color:#fff" onclick="exportMIDI(16)">MIDI 16 Bars</button>
   </div>
   <div class="xprog" id="xProg">Rendering...</div>
+</div>
+
+<!-- MIDI SYNC -->
+<div class="panel acid-border">
+  <div class="stitle">
+    <span class="l" style="color:var(--quantum)"><span class="dot" style="background:var(--quantum);box-shadow:0 0 6px var(--quantum)"></span>MIDI CLOCK SYNC</span>
+  </div>
+  <p class="info">Sync to external MIDI clock from your DAW or hardware. When connected, your DAW's transport controls Q-ACID's playback and tempo.</p>
+  <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-top:0.5rem;align-items:center">
+    <button class="xbtn sec" id="midiEnableBtn" onclick="enableMIDIClock()">Enable MIDI Clock</button>
+    <select id="midiInSel" onchange="setMIDIInput(this.value)" style="background:var(--chassis);color:var(--text);border:1px solid var(--border);font-family:'JetBrains Mono',monospace;font-size:0.55rem;padding:0.3rem;border-radius:3px;display:none">
+      <option value="">— Select MIDI input —</option>
+    </select>
+  </div>
+  <div class="info" id="midiStat" style="margin-top:0.5rem">MIDI clock disabled</div>
 </div>
 
 <!-- ====== SCIENCE SECTION ====== -->
@@ -846,6 +875,22 @@ let lastBassFreq=0;
 const NOTES=['C2','C#2','D2','D#2','E2','F2','F#2','G2','G#2','A2','A#2','B2','C3','C#3','D3','D#3','E3','F3','F#3','G3'];
 const NF={'C2':65.41,'C#2':69.30,'D2':73.42,'D#2':77.78,'E2':82.41,'F2':87.31,'F#2':92.50,'G2':98,'G#2':103.83,'A2':110,'A#2':116.54,'B2':123.47,'C3':130.81,'C#3':138.59,'D3':146.83,'D#3':155.56,'E3':164.81,'F3':174.61,'F#3':185,'G3':196};
 let selNote='C2';
+let keyOffset=0; // semitones (0-11)
+let octaveOffset=0; // octaves (-2 to +2)
+
+function setKey(v){
+  keyOffset=parseInt(v);
+}
+function chOctave(d){
+  octaveOffset=Math.max(-2,Math.min(2,octaveOffset+d));
+  document.getElementById('octV').textContent=(octaveOffset>0?'+':'')+octaveOffset;
+}
+
+function transposeFreq(freq){
+  // Apply key + octave transpose
+  const semis=keyOffset+octaveOffset*12;
+  return freq*Math.pow(2,semis/12);
+}
 
 // Probability weights for quantum note selection (index 0-6 = C,D,E,F,G,A,B)
 let noteWeights=[1,1,1,1,1,1,1]; // Equal by default
@@ -969,7 +1014,7 @@ function playPerc(dest,t,vel){
 function playAcid(dest,t,note,cutoffBoost,resoBoost,stepAccent,stepSlide,nextNote){
   cutoffBoost=cutoffBoost||0;resoBoost=resoBoost||0;
   const accentBoost=stepAccent?1.5:1;
-  const freq=NF[note]||130.81;
+  const freq=transposeFreq(NF[note]||130.81);
   const{cutoff,resonance,envMod,decay,accent,attack,release,subVol,glide,waveform}=sP;
   const liveCutoff=Math.min(cutoff+cutoffBoost+(stepAccent?800:0),15000);
   const liveReso=Math.min(resonance+resoBoost+(stepAccent?3:0),30);
@@ -983,7 +1028,7 @@ function playAcid(dest,t,note,cutoffBoost,resoBoost,stepAccent,stepSlide,nextNot
   const slideTime=glide/1000;
   if(stepSlide&&nextNote){
     // This note slides into the next one
-    const nextFreq=NF[nextNote]||freq;
+    const nextFreq=transposeFreq(NF[nextNote]||freq);
     o.frequency.setValueAtTime(freq,t);
     o.frequency.exponentialRampToValueAtTime(nextFreq,t+0.15+slideTime);
   }else if(glideMode&&prevFreq>0){
@@ -996,7 +1041,7 @@ function playAcid(dest,t,note,cutoffBoost,resoBoost,stepAccent,stepSlide,nextNot
   // Sub oscillator
   const sub=AC.createOscillator();sub.type='sine';
   if(stepSlide&&nextNote){
-    const nextFreq=NF[nextNote]||freq;
+    const nextFreq=transposeFreq(NF[nextNote]||freq);
     sub.frequency.setValueAtTime(freq/2,t);
     sub.frequency.exponentialRampToValueAtTime(nextFreq/2,t+0.15+slideTime);
   }else if(glideMode&&prevFreq>0){
@@ -1189,7 +1234,7 @@ function loadTemplate(idx){
 function getStepCols(wide){
   // On narrow screens, use fixed px so grid scrolls. On wide, use 1fr.
   const avail=document.querySelector('.panel')?.offsetWidth||600;
-  const labelW=wide?78:36;
+  const labelW=wide?105:36;
   const gap=2;
   const stepW=Math.floor((avail-labelW-gap*numSteps)/numSteps);
   if(stepW<24) return `${labelW}px repeat(${numSteps},28px)`;
@@ -1237,14 +1282,38 @@ function attachVelDrag(el,tr,s){
   document.addEventListener('touchend',end);
 }
 
+// Drum sound assignment per track row
+let trackSound={kick:'kick',snare:'snare',hat:'hat'};
+const SOUND_OPTIONS={
+  kick:[['kick','KICK'],['perc','PERC']],
+  snare:[['snare','SNARE'],['clap','CLAP']],
+  hat:[['hat','HAT'],['openhat','OPEN HAT'],['ride','RIDE']]
+};
+
+function setTrackSound(tr,snd){
+  trackSound[tr]=snd;
+}
+
+function playDrumByName(snd,dest,t,vel){
+  switch(snd){
+    case 'kick':playKick(dest,t,vel);break;
+    case 'snare':playSnare(dest,t,vel);break;
+    case 'hat':playHat(dest,t,vel);break;
+    case 'openhat':playOpenHat(dest,t,vel);break;
+    case 'clap':playClap(dest,t,vel);break;
+    case 'ride':playRide(dest,t,vel);break;
+    case 'perc':playPerc(dest,t,vel);break;
+  }
+}
+
 function buildDG(){
   const c=document.getElementById('drumG');c.innerHTML='';
   const cols=getStepCols(true);
   ['kick','snare','hat'].forEach(tr=>{
     const r=document.createElement('div');r.className='trow';r.style.gridTemplateColumns=cols;
     const l=document.createElement('span');l.className='tlbl';l.style.color=`var(--${tr})`;
-    const trName=tr==='hat'?'HH':tr.toUpperCase().slice(0,2);
-    l.innerHTML=`${trName}<span class="ms-btns"><button class="ms-btn${trackMute[tr]?' m-on':''}" onclick="toggleMute('${tr}',event)" title="Mute">M</button><button class="ms-btn${trackSolo[tr]?' s-on':''}" onclick="toggleSolo('${tr}',event)" title="Solo">S</button></span>`;
+    const opts=SOUND_OPTIONS[tr].map(([v,name])=>`<option value="${v}"${trackSound[tr]===v?' selected':''}>${name}</option>`).join('');
+    l.innerHTML=`<select class="snd-sel" onchange="setTrackSound('${tr}',this.value)" onclick="event.stopPropagation()" style="background:var(--chassis);color:var(--${tr});border:1px solid var(--border);font-family:'JetBrains Mono',monospace;font-size:0.4rem;padding:1px 2px;border-radius:2px;cursor:pointer;width:auto;max-width:48px">${opts}</select><span class="ms-btns"><button class="ms-btn${trackMute[tr]?' m-on':''}" onclick="toggleMute('${tr}',event)" title="Mute">M</button><button class="ms-btn${trackSolo[tr]?' s-on':''}" onclick="toggleSolo('${tr}',event)" title="Solo">S</button></span>`;
     r.appendChild(l);
     for(let s=0;s<numSteps;s++){
       const el=document.createElement('div');el.className='step'+(s%4===0?' bm':'');
@@ -1791,18 +1860,18 @@ function schedStep(dest,step,t){
   let kk=p.kick[step];
   if(p.q.kick[step])kk=Math.random()>decoProb(step,qKT);
   else if(kk&&!probPass)kk=false;
-  if(kk&&isAudible('kick'))playKick(dest,t,p.vel?.kick?.[step]);
+  if(kk&&isAudible('kick'))playDrumByName(trackSound.kick,dest,t,p.vel?.kick?.[step]);
   if(entangled&&kk&&isAudible('bass')&&!p.bass[step]&&!p.q.bass[step])playAcid(dest,t,weightedNoteSelect(8),obsCB,obsRB);
 
   let sn=p.snare[step];
   if(p.q.snare[step])sn=Math.random()>decoProb(numSteps+step,qST);
   else if(sn&&!probPass)sn=false;
-  if(sn&&isAudible('snare'))playSnare(dest,t,p.vel?.snare?.[step]);
+  if(sn&&isAudible('snare'))playDrumByName(trackSound.snare,dest,t,p.vel?.snare?.[step]);
 
   let hh=p.hat[step];
   if(p.q.hat[step])hh=Math.random()>decoProb(2*numSteps+step,qHT);
   else if(hh&&!probPass)hh=false;
-  if(hh&&isAudible('hat'))playHat(dest,t,p.vel?.hat?.[step]);
+  if(hh&&isAudible('hat'))playDrumByName(trackSound.hat,dest,t,p.vel?.hat?.[step]);
 
   if(!isAudible('bass'))return;
   if(p.q.bass[step]){
@@ -1958,6 +2027,121 @@ function bufToWav(buf){
   ws(0,'RIFF');v.setUint32(4,36+len*nc*2,true);ws(8,'WAVE');ws(12,'fmt ');v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,nc,true);v.setUint32(24,sr,true);v.setUint32(28,sr*nc*2,true);v.setUint16(32,nc*2,true);v.setUint16(34,16,true);ws(36,'data');v.setUint32(40,len*nc*2,true);
   let off=44;for(let i=0;i<len;i++){for(let ch=0;ch<nc;ch++){let s=buf.getChannelData(ch)[i];s=Math.max(-1,Math.min(1,s));v.setInt16(off,s<0?s*0x8000:s*0x7FFF,true);off+=2}}
   return out;
+}
+
+// ===== MIDI EXPORT =====
+// Standard MIDI file (SMF) Type 0, single track
+// Drums on channel 10 (index 9), bass on channel 1 (index 0)
+// GM drum mapping: kick=36, snare=38, hat=42, openhat=46, clap=39, ride=51, perc=45 (low tom)
+const MIDI_DRUM_NOTE={kick:36,snare:38,hat:42,openhat:46,clap:39,ride:51,perc:45};
+// Bass notes — convert NF freq table key to MIDI note number
+// MIDI: C4=60, A4=69. C2=36, C3=48
+const NOTE_TO_MIDI={'C2':36,'C#2':37,'D2':38,'D#2':39,'E2':40,'F2':41,'F#2':42,'G2':43,'G#2':44,'A2':45,'A#2':46,'B2':47,'C3':48,'C#3':49,'D3':50,'D#3':51,'E3':52,'F3':53,'F#3':54,'G3':55};
+
+function vlq(value){
+  // Variable-length quantity encoding for MIDI delta times
+  const bytes=[value&0x7F];
+  while((value>>=7)>0)bytes.unshift(0x80|(value&0x7F));
+  return bytes;
+}
+
+function exportMIDI(bars){
+  const prog=document.getElementById('xProg');prog.style.display='block';prog.textContent='Generating MIDI '+bars+' bars...';
+  try{
+    const TPQ=480; // ticks per quarter note (PPQ)
+    const ticksPerStep=TPQ/4; // 16 steps per bar = quarter/4
+    const p=P();
+    // Build event list: [tick, status, data1, data2]
+    const events=[];
+
+    for(let bar=0;bar<bars;bar++){
+      for(let s=0;s<numSteps;s++){
+        const tick=bar*numSteps*ticksPerStep+s*ticksPerStep;
+        const probPass=Math.random()*100<((p.stepProb&&p.stepProb[s])??100);
+
+        // Drum tracks — collapse quantum once per export
+        ['kick','snare','hat'].forEach((tr,ti)=>{
+          let hit=p[tr][s];
+          if(p.q[tr][s])hit=Math.random()>0.4;
+          else if(hit&&!probPass)hit=false;
+          if(hit&&isAudible(tr)){
+            const sndName=trackSound[tr]||tr;
+            const midiNote=MIDI_DRUM_NOTE[sndName]||MIDI_DRUM_NOTE[tr];
+            const vel=Math.round((p.vel?.[tr]?.[s]??100)*1.27); // 0-100 -> 0-127
+            events.push([tick,0x99,midiNote,Math.min(127,vel)]); // Note on, ch 10
+            events.push([tick+ticksPerStep-2,0x89,midiNote,0]); // Note off
+          }
+        });
+
+        // Bass — channel 1
+        if(isAudible('bass')){
+          let bassNote=null,bassAccent=false,bassSlide=false;
+          if(p.q.bass[s]){
+            if(Math.random()>0.35)bassNote=weightedNoteSelect(12);
+          }else if(p.bass[s]&&probPass){
+            bassNote=p.bass[s];
+            bassAccent=p.accent[s];
+            bassSlide=p.slide[s];
+          }
+          if(bassNote){
+            let midi=(NOTE_TO_MIDI[bassNote]||36)+keyOffset+octaveOffset*12;
+            midi=Math.max(0,Math.min(127,midi));
+            const baseVel=p.vel?.bass?.[s]??100;
+            const vel=Math.round(Math.min(127,baseVel*1.27*(bassAccent?1.3:1)));
+            events.push([tick,0x90,midi,vel]); // Note on, ch 1
+            // Slide notes overlap with next, otherwise short
+            const noteLen=bassSlide?ticksPerStep*1.5:ticksPerStep-2;
+            events.push([tick+noteLen,0x80,midi,0]);
+          }
+        }
+      }
+    }
+
+    // Sort events by tick (ascending), note-offs before note-ons at same tick
+    events.sort((a,b)=>a[0]-b[0] || ((a[1]&0xF0)===0x80?-1:1));
+
+    // Build track data with delta times
+    const trackData=[];
+    // Tempo meta: microseconds per quarter = 60000000/bpm
+    const usPerQ=Math.round(60000000/bpm);
+    trackData.push(0,0xFF,0x51,0x03,(usPerQ>>16)&0xFF,(usPerQ>>8)&0xFF,usPerQ&0xFF);
+    // Time signature: 4/4
+    trackData.push(0,0xFF,0x58,0x04,0x04,0x02,0x18,0x08);
+
+    let lastTick=0;
+    for(const ev of events){
+      const delta=Math.max(0,Math.round(ev[0]-lastTick));
+      lastTick=ev[0];
+      trackData.push(...vlq(delta),ev[1],ev[2],ev[3]);
+    }
+    // End of track
+    trackData.push(0,0xFF,0x2F,0x00);
+
+    // Header chunk
+    const header=[
+      0x4D,0x54,0x68,0x64, // "MThd"
+      0,0,0,6, // chunk size
+      0,0, // format 0
+      0,1, // 1 track
+      (TPQ>>8)&0xFF, TPQ&0xFF // ticks per quarter
+    ];
+
+    // Track chunk
+    const trackLen=trackData.length;
+    const trackHeader=[
+      0x4D,0x54,0x72,0x6B, // "MTrk"
+      (trackLen>>24)&0xFF,(trackLen>>16)&0xFF,(trackLen>>8)&0xFF,trackLen&0xFF
+    ];
+
+    const all=new Uint8Array([...header,...trackHeader,...trackData]);
+    const blob=new Blob([all],{type:'audio/midi'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');a.href=url;a.download=`q-acid-303_${bpm}bpm_${bars}bars_${Date.now()}.mid`;
+    document.body.appendChild(a);a.click();document.body.removeChild(a);
+    setTimeout(()=>URL.revokeObjectURL(url),5000);
+    prog.textContent='MIDI exported! Drop it into your DAW.';
+    setTimeout(()=>prog.style.display='none',3000);
+  }catch(e){prog.textContent='MIDI export error: '+e.message;console.error(e)}
 }
 
 // ===== WAVEFORM VIS =====
@@ -2126,6 +2310,108 @@ buildKnobs(acidKnobDefs,'acidKnobs');buildKnobs(fxKnobDefs,'fxKnobs');
 buildTemplates();buildProbBars();buildProbGrid();buildDecoVis();
 refreshPresetList();
 document.getElementById('presetName').addEventListener('keydown',e=>{if(e.key==='Enter')savePreset()});
+
+// ===== MIDI CLOCK SYNC =====
+let midiAccess=null;
+let midiInput=null;
+let midiClockEnabled=false;
+let midiClockCount=0;
+let midiClockTimes=[];
+let midiSyncedBPM=0;
+
+async function enableMIDIClock(){
+  if(!navigator.requestMIDIAccess){
+    document.getElementById('midiStat').textContent='Web MIDI not supported in this browser';
+    return;
+  }
+  try{
+    midiAccess=await navigator.requestMIDIAccess();
+    const sel=document.getElementById('midiInSel');
+    sel.innerHTML='<option value="">— Select MIDI input —</option>';
+    let count=0;
+    for(const inp of midiAccess.inputs.values()){
+      const opt=document.createElement('option');
+      opt.value=inp.id;opt.textContent=inp.name||'Input '+count;
+      sel.appendChild(opt);count++;
+    }
+    sel.style.display='inline-block';
+    if(count===0){
+      document.getElementById('midiStat').textContent='No MIDI inputs detected. Connect a device or enable virtual MIDI from your DAW.';
+    }else{
+      document.getElementById('midiStat').innerHTML=`<span style="color:var(--acid)">${count}</span> MIDI input${count===1?'':'s'} found — select one to listen for clock`;
+    }
+    document.getElementById('midiEnableBtn').textContent='MIDI Enabled';
+    document.getElementById('midiEnableBtn').style.background='var(--acid)';
+    document.getElementById('midiEnableBtn').style.color='#000';
+    midiClockEnabled=true;
+    // Refresh on device hotplug
+    midiAccess.onstatechange=()=>{enableMIDIClock()};
+  }catch(e){
+    document.getElementById('midiStat').textContent='MIDI access denied: '+e.message;
+  }
+}
+
+function setMIDIInput(id){
+  if(midiInput){midiInput.onmidimessage=null;midiInput=null}
+  if(!id||!midiAccess)return;
+  midiInput=midiAccess.inputs.get(id);
+  if(midiInput){
+    midiInput.onmidimessage=handleMIDIMessage;
+    document.getElementById('midiStat').innerHTML=`Listening to <span style="color:var(--acid)">${midiInput.name}</span> — start your DAW transport`;
+    midiClockCount=0;midiClockTimes=[];
+  }
+}
+
+function handleMIDIMessage(e){
+  const status=e.data[0];
+  // 0xF8 = MIDI Clock (24 per quarter note)
+  // 0xFA = Start
+  // 0xFB = Continue
+  // 0xFC = Stop
+  if(status===0xF8){
+    midiClockCount++;
+    const now=performance.now();
+    midiClockTimes.push(now);
+    if(midiClockTimes.length>24)midiClockTimes.shift();
+    // Calculate BPM from clock interval (24 clocks per quarter note)
+    if(midiClockTimes.length>=12){
+      const span=midiClockTimes[midiClockTimes.length-1]-midiClockTimes[0];
+      const intervals=midiClockTimes.length-1;
+      const msPerClock=span/intervals;
+      const detected=Math.round(60000/(msPerClock*24));
+      if(detected>=40&&detected<=300&&Math.abs(detected-midiSyncedBPM)>0){
+        midiSyncedBPM=detected;
+        bpm=detected;
+        document.getElementById('bpmV').textContent=bpm;
+        fxP.delayTime=60/bpm*0.75;updateFX();
+      }
+    }
+    // Step advance: 6 clocks per 16th step
+    if(playing&&midiClockCount%6===0){
+      // Force scheduler to advance step now
+      const stepTime=AC.currentTime;
+      curStep=(curStep+1)%numSteps;
+      if(curStep===0){
+        loopCount++;
+        if(decoherenceOn)applyDecoherence();
+        if(chainMode){curPat=(curPat+1)%4;document.getElementById('patV').textContent=curPat+1}
+      }
+      schedStep(distNode,curStep,stepTime+0.01);
+      refreshUI();
+      // Block normal scheduler from also firing
+      nextT=AC.currentTime+10;
+    }
+  }else if(status===0xFA||status===0xFB){
+    // Start / Continue — start playback
+    if(!playing)togglePlay();
+    midiClockCount=0;
+    document.getElementById('midiStat').innerHTML=`<span style="color:var(--acid)">▶ Playing</span> from MIDI clock${midiSyncedBPM?' @ '+midiSyncedBPM+' BPM':''}`;
+  }else if(status===0xFC){
+    // Stop
+    if(playing)togglePlay();
+    document.getElementById('midiStat').innerHTML=`<span style="color:var(--decohere)">■ Stopped</span> — waiting for MIDI start`;
+  }
+}
 
 // Fill button — hold to fill, release to restore
 const fillB=document.getElementById('fillBtn');

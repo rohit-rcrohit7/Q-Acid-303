@@ -12,6 +12,7 @@
   <img src="https://img.shields.io/badge/PWA-installable-bf00ff?style=flat-square&labelColor=0a0a0e" alt="PWA"/>
   <img src="https://img.shields.io/badge/dependencies-zero-00d4ff?style=flat-square&labelColor=0a0a0e" alt="No dependencies"/>
   <img src="https://img.shields.io/badge/export-WAV-ff3c00?style=flat-square&labelColor=0a0a0e" alt="WAV Export"/>
+  <img src="https://img.shields.io/badge/created%20by-SheffRave-39ff14?style=flat-square&labelColor=0a0a0e" alt="Created by SheffRave"/>
 </p>
 
 ---
@@ -65,7 +66,7 @@ One HTML file. No dependencies. No install. No server.
 ## Use it
 
 ### Online
-👉 **[Launch Q-ACID 303](https://rohit-rcrohit7.github.io/Q-Acid-303/)** ← *replace with your URL after deploying*
+👉 **[Launch Q-ACID 303](https://yourusername.github.io/q-acid-303/)** ← *replace with your URL after deploying*
 
 ### Local
 Download `index.html` and open it in any modern browser. That's it.
@@ -171,4 +172,6 @@ Works in any modern browser with Web Audio API:
 
 ## License
 
-Do whatever you want with it.
+© 2026 **SheffRave**. All rights reserved.
+
+Created by SheffRave. Q-ACID 303 is an original work. Unauthorised reproduction, distribution, or commercial use without permission is prohibited.

@@ -76,8 +76,12 @@
   <text x="580" y="260" text-anchor="middle" font-family="'Courier New',monospace" font-size="9" letter-spacing="2" fill="#00d4ff" opacity="0.7">ENTANGLEMENT</text>
   
   <!-- Version pill -->
-  <rect x="413" y="280" width="74" height="18" rx="9" fill="rgba(191,0,255,0.1)" stroke="#bf00ff" stroke-width="0.5" opacity="0.6"/>
-  <text x="450" y="293" text-anchor="middle" font-family="'Courier New',monospace" font-size="9" letter-spacing="1.5" fill="#bf00ff" opacity="0.8">v3 • PWA</text>
+  <rect x="380" y="280" width="74" height="18" rx="9" fill="rgba(191,0,255,0.1)" stroke="#bf00ff" stroke-width="0.5" opacity="0.6"/>
+  <text x="417" y="293" text-anchor="middle" font-family="'Courier New',monospace" font-size="9" letter-spacing="1.5" fill="#bf00ff" opacity="0.8">v3 • PWA</text>
+  
+  <!-- SheffRave credit -->
+  <text x="470" y="293" text-anchor="start" font-family="'Courier New',monospace" font-size="9" letter-spacing="1.5" fill="#5a5a72" opacity="0.7">by</text>
+  <text x="495" y="293" text-anchor="start" font-family="'Courier New',monospace" font-size="9" letter-spacing="1.5" fill="#39ff14" opacity="0.8" font-weight="700">SHEFFRAVE</text>
   
   <!-- Top border accent -->
   <rect x="0" y="0" width="900" height="2" fill="url(#acidGrad)" opacity="0.6"/>

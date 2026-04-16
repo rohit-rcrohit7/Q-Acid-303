@@ -104,7 +104,7 @@ Distortion · Delay with feedback · Reverb · Phaser · Sidechain compression
 ## Use it
 
 ### Online
-👉 **[Launch Q-ACID 303](https://rohit-rcrohit7.github.io/q-acid-303/)** ← *replace with your URL after deploying*
+👉 **[Launch Q-ACID 303](https://rohit-rcrohit7.github.io/Q-Acid-303/)** 
 
 ### Local
 Download `index.html` and open it in any modern browser. That's it.
